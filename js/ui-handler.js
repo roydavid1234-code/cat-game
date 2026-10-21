@@ -145,16 +145,16 @@ export function renderHomeRankTab(statKey) {
     else if (statKey === 'charm') statLabel = `✨魅力:${item.charm}`;
 
     container.innerHTML += `
-      <div class="p-3 bg-[#FAF8F5] border border-[#E5E0D8] rounded-2xl flex items-center justify-between">
-        <div class="flex items-center gap-2.5">
-          <span class="font-serif font-black text-base w-5 text-center text-[#9E2A2B]">${medal}</span>
+      <div class="p-3 bg-[#FAF8F5] border border-[#E5E0D8] rounded-2xl flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2.5 overflow-hidden">
+          <span class="font-serif font-black text-base w-5 text-center text-[#9E2A2B] flex-shrink-0">${medal}</span>
           <img src="${catThumb}" class="w-10 h-10 rounded-lg bg-white border border-[#E5E0D8] p-1 flex-shrink-0">
-          <div>
-            <div class="font-bold text-[#2C2C2C]">${item.name} <span class="text-[11px] font-normal text-[#7F7B75]">(${item.breed})</span></div>
-            <div class="text-[10px] text-[#7F7B75]">守護主人：${item.owner} · 享年：${item.lifespan}</div>
+          <div class="truncate">
+            <div class="font-bold text-[#2C2C2C] truncate">${item.name} <span class="text-[11px] font-normal text-[#7F7B75]">(${item.breed})</span></div>
+            <div class="text-[10px] text-[#7F7B75] mt-0.5 leading-tight">主人：${item.owner}<br>成長：${item.lifespan}</div>
           </div>
         </div>
-        <div class="bg-white px-2 py-1 rounded-lg border border-[#E5E0D8] text-[10px] font-bold text-[#9E2A2B]">
+        <div class="bg-white px-2 py-1 rounded-lg border border-[#E5E0D8] text-[10px] font-bold text-[#9E2A2B] whitespace-nowrap flex-shrink-0 shadow-sm">
           ${statLabel}
         </div>
       </div>
@@ -530,6 +530,20 @@ export function onCanvasClick(e) {
   const clickX = (e.clientX - rect.left) * (e.target.width / rect.width);
   const clickY = (e.clientY - rect.top) * (e.target.height / rect.height);
 
+  // 判斷是否點擊到蟲子
+  if (gameState.activeBug) {
+    const distToBug = Math.hypot(clickX - gameState.activeBug.x, clickY - gameState.activeBug.y);
+    if (distToBug < 35) { // 手機上給予較寬鬆的點擊範圍
+      gameState.activeBug = null;
+      gameState.userCoins += 1;
+      gameState.currentCat.health = Math.min(100, gameState.currentCat.health + 1);
+      playClickSound();
+      spawnFloatingFeedback(e.clientX, e.clientY, "+1 貓幣 抵抗力+1 (抓到蟲子!) ✨");
+      updateStatusUI();
+      return;
+    }
+  }
+
   for (let i = 0; i < gameState.roomPoops.length; i++) {
     const p = gameState.roomPoops[i];
     if (Math.hypot(clickX - p.x, clickY - p.y) < 22) {
@@ -810,8 +824,17 @@ export function startGameTimeClock() {
     const prevAgeMonths = c.ageMonths;
     c.ageMonths += (1 / 30);
 
-    if (Math.floor(c.ageMonths) > Math.floor(prevAgeMonths)) {
+    const currentFloorMonth = Math.floor(c.ageMonths);
+    const prevFloorMonth = Math.floor(prevAgeMonths);
+
+    // 每過 1 個月結算
+    if (currentFloorMonth > prevFloorMonth) {
       checkMonthlyPurrEvent();
+      
+      // 【新增】每 3 個月自動產生新事件（不管上一次有沒有點，都會強制換新）
+      if (currentFloorMonth % 3 === 0 && currentFloorMonth > 0) {
+        triggerNextEvent();
+      }
     }
 
     c.hunger = Math.max(0, c.hunger - 0.25);
@@ -970,10 +993,15 @@ export function resolveEventChoice(num) {
 
   const box = document.getElementById('event-choices-box');
   if (box) {
+    // 計算下一個 3 的倍數
+    const nextTarget = Math.floor(c.ageMonths / 3) * 3 + 3;
+    const y = Math.floor(nextTarget / 12);
+    const m = nextTarget % 12;
+
     box.innerHTML = `
       <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-800 text-center font-bold">
         ✨ 選擇完成！${res.msg}<br>
-        <span class="text-[11px] font-normal text-emerald-600 mt-1 block">等待下次好事發生 🐾</span>
+        <span class="text-[11px] font-normal text-emerald-600 mt-1 block">等待下次生活點滴 (預計 ${y}歲${m}個月) 🐾</span>
       </div>
     `;
   }

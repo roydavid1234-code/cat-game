@@ -56,17 +56,21 @@
     </div>
     
     <div class="flex items-center space-x-3 text-xs font-medium text-[#7F7B75]">
-      <div id="coin-counter-badge" class="hidden items-center gap-1 bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-bold border border-amber-300">
-        🪙 <span id="val-coins">0</span> 貓幣
-      </div>
-      <div id="snack-counter-badge" class="hidden items-center gap-1 bg-rose-100 text-rose-800 px-2.5 py-1 rounded-full font-bold border border-rose-300">
-        🐟 零食: <span id="val-snacks">5</span>
-      </div>
+          <!-- 音效按鈕 -->
+    <div id="sound-btn" onclick="toggleAudio()" class="cursor-pointer hover:text-[#9E2A2B] flex items-center gap-1.5 transition whitespace-nowrap flex-shrink-0">
+      <i class="fa-solid fa-volume-high text-[#9E2A2B]" id="sound-icon"></i>
+      <span id="sound-text">音效: 開</span>
+    </div>
 
-      <div id="sound-btn" onclick="toggleAudio()" class="cursor-pointer hover:text-[#9E2A2B] flex items-center gap-1.5 transition">
-        <i class="fa-solid fa-volume-high text-[#9E2A2B]" id="sound-icon"></i>
-        <span id="sound-text">音效: 開</span>
-      </div>
+    <!-- 貓幣 -->
+    <div id="coin-counter-badge" class="items-center gap-1 bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-bold border border-amber-300 flex whitespace-nowrap flex-shrink-0">
+      🪙 <span id="val-coins">0</span> 貓幣
+    </div>
+
+    <!-- 零食 -->
+    <div id="snack-counter-badge" class="items-center gap-1 bg-rose-100 text-rose-800 px-2.5 py-1 rounded-full font-bold border border-rose-300 flex whitespace-nowrap flex-shrink-0">
+      🐟 零食: <span id="val-snacks">5</span>
+    </div>
       <div class="text-[#E5E0D8]">|</div>
       
       <button onclick="openMyMemoryModal()" class="text-[#2C2C2C] hover:text-[#9E2A2B] font-bold flex items-center gap-1">
@@ -118,9 +122,8 @@
           </div>
 
           <div class="pt-2 space-y-2">
-            <button onclick="openNameModal()" class="w-full py-4 px-8 rounded-2xl bg-[#9E2A2B] hover:bg-[#802122] text-white font-serif font-bold text-lg shadow-lg shadow-[#9E2A2B]/20 transition transform active:scale-[0.98] flex items-center justify-center gap-3">
-              <span>誕生主角貓咪（取名並開啟貓生）</span>
-              <i class="fa-solid fa-arrow-right text-sm"></i>
+            <button onclick="openNameModal()" class="w-full py-2.5 rounded-xl bg-[#9E2A2B] hover:bg-[#852223] text-white font-bold transition shadow-sm flex items-center justify-center gap-2 text-sm">
+              <i class="fa-solid fa-paw"></i> 誕生主角貓咪（取名並開啟貓生）
             </button>
 
             <!-- 繼續陪伴按鈕 -->
@@ -129,7 +132,7 @@
               <span id="continue-btn-text">繼續陪伴（讀取保存進度）</span>
             </button>
 
-            <p class="text-[11px] text-center text-[#7F7B75] mt-2 font-jp">※ 貓咪為隨機生成，不可重複隨機骰品種。</p>
+            <p class="text-[11px] text-center text-[#7F7B75] mt-2 font-jp">※ 領養代替購買，不隨意棄養。</p>
           </div>
         </div>
 
