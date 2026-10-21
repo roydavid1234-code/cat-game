@@ -1,0 +1,35 @@
+<header class="border-b border-[#E5E0D8] bg-[#F7F5F0]/90 backdrop-blur-md px-6 py-3.5 sticky top-0 z-40 flex items-center justify-between">
+  <div class="flex items-center space-x-3">
+    <div class="w-8 h-8 rounded-full bg-[#9E2A2B] text-white flex items-center justify-center font-bold text-sm shadow-sm">
+      🐾
+    </div>
+    <div>
+      <h1 class="font-serif font-black text-xl tracking-tight text-[#2C2C2C]">
+        70貓與你妳
+      </h1>
+    </div>
+  </div>
+  
+  <div class="flex items-center space-x-3 text-xs font-medium text-[#7F7B75]">
+    <div id="coin-counter-badge" class="hidden items-center gap-1 bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-bold border border-amber-300">
+      🪙 <span id="val-coins">0</span> 貓幣
+    </div>
+    <div id="snack-counter-badge" class="hidden items-center gap-1 bg-rose-100 text-rose-800 px-2.5 py-1 rounded-full font-bold border border-rose-300">
+      🐟 零食: <span id="val-snacks">5</span>
+    </div>
+
+    <div id="sound-btn" onclick="toggleAudio()" class="cursor-pointer hover:text-[#9E2A2B] flex items-center gap-1.5 transition">
+      <i class="fa-solid fa-volume-high text-[#9E2A2B]" id="sound-icon"></i>
+      <span id="sound-text">音效: 開</span>
+    </div>
+    <div class="text-[#E5E0D8]">|</div>
+    
+    <button onclick="openMyMemoryModal()" class="text-[#2C2C2C] hover:text-[#9E2A2B] font-bold flex items-center gap-1">
+      <i class="fa-solid fa-book-bookmark text-[#9E2A2B]"></i> 我的貓咪回憶錄
+    </button>
+
+    <a id="nav-cat-planet" href="#cat-planet-section" class="text-[#7F7B75] hover:text-[#2C2C2C] font-bold flex items-center gap-1">
+      <i class="fa-solid fa-moon text-indigo-500"></i> 前往貓星球
+    </a>
+  </div>
+</header>

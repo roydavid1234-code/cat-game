@@ -1,0 +1,16 @@
+cat-game/
+├── index.html                   # 極簡骨架
+├── style.css                    # 樣式表
+├── components/                  # 放 HTML 局部組件
+│   ├── header.html
+│   ├── phase-landing.html
+│   ├── phase-game.html
+│   └── modals.html
+└── js/                          # 放 JavaScript 模組
+    ├── data.js
+    ├── audio.js
+    ├── game-state.js
+    ├── canvas-render.js
+    ├── ui-handler.js
+    ├── loader.js
+    └── main.js

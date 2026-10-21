@@ -1,0 +1,79 @@
+/* 畫布像素化算繪 */
+canvas.pixelated {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+/* 捲軸美化 */
+::-webkit-scrollbar { 
+  width: 5px; 
+  height: 5px; 
+}
+::-webkit-scrollbar-track { 
+  background: #F7F5F0; 
+}
+::-webkit-scrollbar-thumb { 
+  background: #D5CFC5; 
+  border-radius: 9999px; 
+}
+
+/* 浮動愛心動畫 */
+@keyframes floatHeart {
+  0% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-35px) scale(1.4); }
+}
+.floating-heart {
+  position: absolute;
+  pointer-events: none;
+  animation: floatHeart 0.8s ease-out forwards;
+  color: #9E2A2B;
+  font-size: 20px;
+  z-index: 50;
+}
+
+/* 浮動文字反饋動畫 */
+@keyframes floatMiss {
+  0% { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-25px); }
+}
+.floating-miss {
+  position: absolute;
+  pointer-events: none;
+  animation: floatMiss 0.7s ease-out forwards;
+  color: #7F7B75;
+  font-weight: bold;
+  font-size: 13px;
+  z-index: 50;
+}
+
+/* 貓耳造型模態框 (Cat Ear Modal) */
+.cat-modal-box {
+  position: relative;
+}
+.cat-modal-box::before, .cat-modal-box::after {
+  content: '';
+  position: absolute;
+  top: -18px;
+  width: 0;
+  height: 0;
+  border-left: 20px solid transparent;
+  border-right: 20px solid transparent;
+  border-bottom: 22px solid #FFFFFF;
+  filter: drop-shadow(0 -3px 3px rgba(0,0,0,0.06));
+}
+.cat-modal-box::before { 
+  left: 28px; 
+  transform: rotate(-10deg); 
+}
+.cat-modal-box::after { 
+  right: 28px; 
+  transform: rotate(10deg); 
+}
+
+/* 逗貓棒與貓零食自訂滑鼠指標 */
+.cursor-toy {
+  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24'><text y='20' font-size='20'>🪶</text></svg>"), auto !important;
+}
+.cursor-snack {
+  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24'><text y='20' font-size='20'>🐟</text></svg>"), auto !important;
+}
