@@ -44,7 +44,7 @@ export function renderTopBreedsBars() {
   if (sortedBreeds.length === 0) {
     container.innerHTML = `
       <div class="py-6 text-center text-[#7F7B75] text-xs">
-        目前尚無誕生紀錄，點擊左側為第一隻貓咪命名開啟貓生吧！🐾
+        目前尚無誕生紀錄，為第一隻貓咪命名開啟貓生吧！🐾
       </div>
     `;
     return;
@@ -163,7 +163,7 @@ export function renderHomeRankTab(statKey) {
 }
 
 // ==========================================
-// 2. 貓星球與回憶錄（雲端同步 + 點擊權限分離）
+// 2. 貓星球與回憶錄
 // ==========================================
 
 export function switchPlanetFilter(filter) {
@@ -191,7 +191,6 @@ export function renderCatPlanetSection() {
   container.innerHTML = '';
   pagContainer.innerHTML = '';
 
-  // 從本地讀取由當前裝置送上星空的專屬 ID 清單
   const myOwnedIds = JSON.parse(localStorage.getItem('my_owned_cat_ids') || '[]');
 
   const allCats = gameState.myStarCats.map(c => ({
@@ -207,7 +206,7 @@ export function renderCatPlanetSection() {
   if (totalCats === 0) {
     container.innerHTML = `
       <div class="col-span-full py-10 text-center text-indigo-300/70 font-serif text-xs">
-        🐾 目前貓星球還沒有登陸的毛孩子，當一段生命圓滿謝幕，牠們將在此化為星光...
+        🐾 目前貓星球還沒有登陸的毛孩子，當生命圓滿謝幕，牠們將在此化為星光守護您...
       </div>
     `;
     return;
@@ -223,8 +222,6 @@ export function renderCatPlanetSection() {
 
   displayCats.forEach((c) => {
     const thumb = c.img || generateBreedThumbnail(c.color || '#E67E22', c.stripe || '#D35400');
-    
-    // 只有自己送上星空的愛貓才能點擊，其他人點擊完全無反應
     const clickAttr = c.isMine 
       ? `onclick="showNostalgicQuote('${c.name}')" class="relative cursor-pointer group"` 
       : `class="relative cursor-default opacity-80"`;
@@ -242,8 +239,8 @@ export function renderCatPlanetSection() {
                 <span>${c.name}</span>
                 <span class="text-[10px] text-indigo-300/80 font-normal">(${c.breed})</span>
               </h5>
-              <p class="text-[11px] text-amber-300 font-bold mt-0.5">守護主人：${c.owner || '貓奴主人'}</p>
-              <p class="text-[10px] text-indigo-200/60">享年 ${c.lifespan}</p>
+              <p class="text-[11px] text-amber-300 font-bold mt-0.5">主人：${c.owner || '貓奴主人'}</p>
+              <p class="text-[10px] text-indigo-200/60">成長 ${c.lifespan}</p>
             </div>
           </div>
           <div class="grid grid-cols-4 gap-1 text-[9px] bg-black/20 p-1.5 rounded-lg text-indigo-200 mb-2">
@@ -314,7 +311,7 @@ export function openMyMemoryModal() {
             <img src="${c.img}" class="w-14 h-14 rounded-xl bg-white border border-[#E5E0D8] p-1 flex-shrink-0 cursor-pointer" onclick="showNostalgicQuote('${c.name}')">
             <div>
               <h4 class="font-serif font-bold text-sm text-[#2C2C2C]">${c.name}</h4>
-              <p class="text-[11px] text-[#7F7B75]">${c.breed} · 享年 ${c.lifespan}</p>
+              <p class="text-[11px] text-[#7F7B75]">${c.breed} · 成長 ${c.lifespan}</p>
               <p class="text-[10px] text-[#9E2A2B] mt-0.5">❤️ 終生親密度: ${c.affection}</p>
             </div>
           </div>
@@ -345,7 +342,7 @@ export function closeCustomAlert() {
 }
 
 // ==========================================
-// 3. 命名、誕生與保存/讀取存檔
+// 3. 命名、誕生與保存/讀取
 // ==========================================
 
 export function openNameModal() {
@@ -415,7 +412,6 @@ function initCatLife(name) {
 
   gameState.birthedCatsHistory.push(birthRecord);
   saveBirthedHistory();
-  // 同步上傳至雲端供所有玩家即時排行
   uploadBirthToCloud(birthRecord);
 
   document.getElementById('phase-landing')?.classList.add('hidden');
@@ -517,7 +513,7 @@ export function updateContinueButtonState() {
 }
 
 // ==========================================
-// 4. 畫布互動與撫摸/餵食邏輯
+// 4. 畫布互動與撫摸/餵食/點擊蟲子
 // ==========================================
 
 export function onCanvasClick(e) {
@@ -530,10 +526,10 @@ export function onCanvasClick(e) {
   const clickX = (e.clientX - rect.left) * (e.target.width / rect.width);
   const clickY = (e.clientY - rect.top) * (e.target.height / rect.height);
 
-  // 判斷是否點擊到蟲子
+  // 1. 抓蟲子判定
   if (gameState.activeBug) {
     const distToBug = Math.hypot(clickX - gameState.activeBug.x, clickY - gameState.activeBug.y);
-    if (distToBug < 35) { // 手機上給予較寬鬆的點擊範圍
+    if (distToBug < 35) {
       gameState.activeBug = null;
       gameState.userCoins += 1;
       gameState.currentCat.health = Math.min(100, gameState.currentCat.health + 1);
@@ -544,9 +540,10 @@ export function onCanvasClick(e) {
     }
   }
 
+  // 2. 清理便便判定
   for (let i = 0; i < gameState.roomPoops.length; i++) {
     const p = gameState.roomPoops[i];
-    if (Math.hypot(clickX - p.x, clickY - p.y) < 22) {
+    if (Math.hypot(clickX - p.x, clickY - p.y) < 25) {
       gameState.roomPoops.splice(i, 1);
       gameState.userCoins += 2;
       playClickSound();
@@ -556,10 +553,8 @@ export function onCanvasClick(e) {
     }
   }
 
-  // 逗貓棒模式禁止點擊貓咪
-  if (gameState.activeInteractionMode === 'toy') {
-    return;
-  }
+  // 逗貓棒模式不處理點擊摸貓
+  if (gameState.activeInteractionMode === 'toy') return;
 
   if (gameState.activeInteractionMode === 'snack') {
     handleFeedSnackAction(e.clientX, e.clientY);
@@ -780,7 +775,7 @@ function attemptCatPoop() {
 }
 
 // ==========================================
-// 6. 時間與健康循環系統
+// 6. 時間與健康循環系統（每 3 個月定期事件）
 // ==========================================
 
 export function togglePlayPause() {
@@ -790,11 +785,11 @@ export function togglePlayPause() {
 
   if (gameState.isPaused) {
     btnText.innerText = "▶ 繼續";
-    btn.className = "px-2.5 py-1 rounded-lg border border-emerald-600 bg-emerald-600 text-white font-bold flex items-center gap-1 transition shadow-sm";
+    btn.className = "px-2.5 py-1 rounded-lg border border-emerald-600 bg-emerald-600 text-white font-bold flex items-center gap-1 transition shadow-sm text-[11px]";
     document.getElementById('ui-state-pill').innerText = "⏸ 已暫停中 (無法進行任何互動)";
   } else {
     btnText.innerText = "⏸ 暫停";
-    btn.className = "px-2.5 py-1 rounded-lg border border-[#9E2A2B] bg-[#9E2A2B] text-white font-bold flex items-center gap-1 transition";
+    btn.className = "px-2.5 py-1 rounded-lg border border-[#9E2A2B] bg-[#9E2A2B] text-white font-bold flex items-center gap-1 transition text-[11px]";
     document.getElementById('ui-state-pill').innerText = "🐾 正在自由散步...";
   }
 }
@@ -806,8 +801,8 @@ export function setTimeSpeed(spd) {
     const btn = document.getElementById(`spd-btn-${s}`);
     if (btn) {
       btn.className = (s === spd)
-        ? "px-2 py-0.5 rounded border border-[#9E2A2B] bg-[#9E2A2B] text-white font-bold"
-        : "px-2 py-0.5 rounded border border-[#E5E0D8] bg-[#F7F5F0]";
+        ? "px-1.5 py-0.5 rounded border border-[#9E2A2B] bg-[#9E2A2B] text-white font-bold text-[10px]"
+        : "px-1.5 py-0.5 rounded border border-[#E5E0D8] bg-[#F7F5F0] text-[10px]";
     }
   });
   startGameTimeClock();
@@ -830,8 +825,8 @@ export function startGameTimeClock() {
     // 每過 1 個月結算
     if (currentFloorMonth > prevFloorMonth) {
       checkMonthlyPurrEvent();
-      
-      // 【新增】每 3 個月自動產生新事件（不管上一次有沒有點，都會強制換新）
+
+      // 每 3 個月自動強制換新事件
       if (currentFloorMonth % 3 === 0 && currentFloorMonth > 0) {
         triggerNextEvent();
       }
@@ -993,7 +988,6 @@ export function resolveEventChoice(num) {
 
   const box = document.getElementById('event-choices-box');
   if (box) {
-    // 計算下一個 3 的倍數
     const nextTarget = Math.floor(c.ageMonths / 3) * 3 + 3;
     const y = Math.floor(nextTarget / 12);
     const m = nextTarget % 12;
@@ -1011,7 +1005,7 @@ export function resolveEventChoice(num) {
 }
 
 // ==========================================
-// 8. 商店與離世邏輯（同步寫入 Firebase 雲端）
+// 8. 商店與離世邏輯
 // ==========================================
 
 export function openShopModal() {
@@ -1075,7 +1069,6 @@ export async function submitCatFarewellAndFinish() {
   const years = Math.floor(c.ageMonths / 12);
   const months = Math.floor(c.ageMonths % 12);
 
-  // 產生專屬唯一識別碼
   const localCatId = 'cat_' + Date.now() + '_' + Math.random().toString(36).substr(2, 6);
 
   const record = {
@@ -1095,12 +1088,10 @@ export async function submitCatFarewellAndFinish() {
     farewellMsg: farewell
   };
 
-  // 記錄「這隻貓是我養的」到當前設備
   const myOwnedIds = JSON.parse(localStorage.getItem('my_owned_cat_ids') || '[]');
   myOwnedIds.push(localCatId);
   localStorage.setItem('my_owned_cat_ids', JSON.stringify(myOwnedIds));
 
-  // 真正上傳至雲端 Firebase 資料庫
   await uploadStarCatToCloud(record);
 
   localStorage.removeItem('saved_living_cat');
