@@ -451,7 +451,7 @@ export function saveCurrentCatProgress() {
   localStorage.setItem('saved_living_cat', JSON.stringify(saveData));
 
   if (gameLoopInterval) clearInterval(gameLoopInterval);
-  gameState.isPaused = false;
+  gameState.isPaused = true; // 【修改】保存後強制進入暫停狀態
 
   document.getElementById('phase-game')?.classList.add('hidden');
   document.getElementById('phase-landing')?.classList.remove('hidden');
@@ -494,6 +494,14 @@ export function continueSavedCat() {
   startRoamingLoop(onCanvasClick, updateStatusUI, spawnFloatingFeedback);
   startGameTimeClock();
   triggerNextEvent();
+
+  // 【新增】讀取進度後，強制設定為暫停狀態，需玩家手動點擊繼續
+  gameState.isPaused = true;
+  const btnText = document.getElementById('pause-btn-text');
+  const btn = document.getElementById('btn-toggle-pause');
+  if (btnText) btnText.innerText = "▶ 繼續";
+  if (btn) btn.className = "px-2.5 py-1 rounded-lg border border-emerald-600 bg-emerald-600 text-white font-bold flex items-center gap-1 transition shadow-sm text-[11px]";
+  document.getElementById('ui-state-pill').innerText = "⏸ 已暫停中 (請手動點擊繼續)";
 }
 
 export function updateContinueButtonState() {
@@ -1092,10 +1100,21 @@ export async function submitCatFarewellAndFinish() {
   myOwnedIds.push(localCatId);
   localStorage.setItem('my_owned_cat_ids', JSON.stringify(myOwnedIds));
 
+  // 上傳至貓星球雲端
   await uploadStarCatToCloud(record);
 
+  // 【新增】徹底清除所有上一代貓咪的狀態、金幣、零食、便便與商店裝備
   localStorage.removeItem('saved_living_cat');
+  localStorage.removeItem('userCoins');
+  localStorage.removeItem('userSnacks');
+  localStorage.removeItem('shopInventory');
+  localStorage.removeItem('roomPoops');
+  localStorage.removeItem('catGame_coins');
+  localStorage.removeItem('catGame_snacks');
+
   document.getElementById('modal-cat-passing')?.classList.add('hidden');
+  
+  // 重新載入網頁，此時沒有存檔，一切數值（金幣0、零食5）就會回到初始預設值
   location.reload();
 }
 

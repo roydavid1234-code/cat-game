@@ -62,15 +62,16 @@
       <span id="sound-text">音效: 開</span>
     </div>
 
-    <!-- 貓幣 -->
-    <div id="coin-counter-badge" class="items-center gap-1 bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-bold border border-amber-300 flex whitespace-nowrap flex-shrink-0">
+      <!-- 貓幣 (將 flex 改為 hidden) -->
+    <div id="coin-counter-badge" class="items-center gap-1 bg-amber-100 text-amber-800 px-2.5 py-1 rounded-full font-bold border border-amber-300 hidden whitespace-nowrap flex-shrink-0">
       🪙 <span id="val-coins">0</span> 貓幣
     </div>
 
-    <!-- 零食 -->
-    <div id="snack-counter-badge" class="items-center gap-1 bg-rose-100 text-rose-800 px-2.5 py-1 rounded-full font-bold border border-rose-300 flex whitespace-nowrap flex-shrink-0">
+    <!-- 零食 (將 flex 改為 hidden) -->
+    <div id="snack-counter-badge" class="items-center gap-1 bg-rose-100 text-rose-800 px-2.5 py-1 rounded-full font-bold border border-rose-300 hidden whitespace-nowrap flex-shrink-0">
       🐟 零食: <span id="val-snacks">5</span>
     </div>
+
       <div class="text-[#E5E0D8]">|</div>
       
       <button onclick="openMyMemoryModal()" class="text-[#2C2C2C] hover:text-[#9E2A2B] font-bold flex items-center gap-1">
@@ -140,7 +141,7 @@
         <div class="w-full lg:w-7/12 bg-white border border-[#E5E0D8] rounded-3xl p-6 sm:p-7 shadow-sm">
           <div class="flex justify-between items-center mb-5">
             <div>
-              <h3 class="font-serif font-bold text-lg text-[#2C2C2C]">玩家貓咪出生熱門 TOP 10</h3>
+              <h3 class="font-serif font-bold text-lg text-[#2C2C2C]">貓咪出生數量 TOP 10</h3>
               <p class="text-xs text-[#7F7B75] mt-0.5">
                 依據真實誕生的品種統計分佈
               </p>
@@ -226,8 +227,9 @@
           </p>
         </div>
 
-        <div class="relative w-full h-80 sm:h-96 bg-white/40 backdrop-blur-sm rounded-2xl border border-emerald-200 overflow-hidden shadow-inner flex flex-col justify-end p-4">
-          <canvas id="paradise-canvas" width="920" height="380" class="absolute inset-0 w-full h-full block pointer-events-none"></canvas>
+        <!-- 貓咪天堂 -->
+        <div class="relative w-full aspect-[2/1] max-h-[400px] bg-[#FAF8F5] rounded-2xl border border-[#E5E0D8] overflow-hidden shadow-inner mt-4">
+          <canvas id="paradise-canvas" width="800" height="400" class="pixelated w-full h-full block"></canvas>
         </div>
       </div>
 
@@ -327,17 +329,17 @@
           </div>
 
           <div class="grid grid-cols-3 gap-1.5 pt-1">
-            <button onclick="feedDirectFood()" class="p-2 rounded-xl border border-[#E5E0D8] bg-[#F7F5F0] hover:border-[#9E2A2B] text-[#2C2C2C] font-jp text-xs font-bold transition flex flex-col items-center justify-center gap-1">
-              <i class="fa-solid fa-bowl-food text-amber-600"></i>
-              <span>🥣 餵主食 (+5)</span>
-            </button>
+            <button onclick="feedDirectFood()" class="p-2.5 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] hover:bg-white text-[#2C2C2C] font-bold transition flex flex-col items-center justify-center gap-1.5 shadow-sm text-xs">
+            <i class="fa-solid fa-bowl-food text-[#E67E22] text-lg"></i>
+            <span>餵主食 (+5)</span>
+          </button>
             <button onclick="refillWater()" class="p-2 rounded-xl border border-[#E5E0D8] bg-[#F7F5F0] hover:border-sky-600 text-[#2C2C2C] font-jp text-xs font-bold transition flex flex-col items-center justify-center gap-1">
               <i class="fa-solid fa-faucet-drip text-sky-500"></i>
               <span>💧 換水補水 (+5)</span>
             </button>
-            <button onclick="visitDoctor()" id="btn-doctor" class="p-2 rounded-xl border border-rose-300 bg-rose-50 hover:bg-rose-100 text-rose-800 font-jp text-xs font-bold transition flex flex-col items-center justify-center gap-1">
-              <i class="fa-solid fa-user-doctor text-rose-600"></i>
-              <span id="doctor-btn-text">🩺 看醫生 (+5)</span>
+            <button onclick="visitDoctor()" id="btn-doctor" class="p-2.5 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] hover:bg-white text-[#2C2C2C] font-bold transition flex flex-col items-center justify-center gap-1.5 shadow-sm text-xs">
+              <i class="fa-solid fa-shield-heart text-purple-500 text-lg"></i>
+              <span id="doctor-btn-text">看醫生 (+5)</span>
             </button>
           </div>
 

@@ -445,33 +445,89 @@ export function initParadiseGarden() {
       ctx.fill();
     }
 
-    // 繪製在天堂漫步的所有毛孩
+    // ================== 天堂專屬物件 ==================
+    // 1. 豪華木質貓跳台 (左後方)
+    ctx.save();
+    ctx.translate(140, 160);
+    ctx.fillStyle = '#D7CCC8'; 
+    ctx.fillRect(-10, 0, 20, 120); // 主柱子
+    ctx.fillStyle = '#A1887F'; 
+    ctx.fillRect(-45, 0, 90, 15);  // 第一層平台
+    ctx.fillRect(-70, 60, 60, 15); // 第二層平台
+    ctx.fillRect(10, 90, 70, 15);  // 第三層平台
+    ctx.fillStyle = '#8D6E63';     // 貓屋
+    ctx.fillRect(-35, -45, 70, 45);
+    ctx.fillStyle = '#3E2723';     // 貓屋洞口
+    ctx.beginPath();
+    ctx.arc(0, -20, 15, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // 2. 吃不完的貓罐頭山 (右前方)
+    ctx.save();
+    ctx.translate(650, 320);
+    ctx.fillStyle = '#90A4AE';
+    ctx.fillRect(-20, 0, 35, 22);
+    ctx.fillRect(20, 0, 35, 22);
+    ctx.fillStyle = '#CFD8DC';
+    ctx.fillRect(0, -22, 35, 22);
+    ctx.fillStyle = '#E57373'; // 標籤
+    ctx.fillRect(-20, 6, 35, 10);
+    ctx.fillRect(20, 6, 35, 10);
+    ctx.fillRect(0, -16, 35, 10);
+    ctx.restore();
+
+    // 3. 散落的玩具毛線球 (左前方)
+    ctx.save();
+    ctx.translate(280, 340);
+    ctx.fillStyle = '#BA68C8';
+    ctx.beginPath();
+    ctx.arc(0, 0, 14, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#9C27B0';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(-10, -6); ctx.lineTo(10, 6);
+    ctx.moveTo(0, -12); ctx.lineTo(-6, 10);
+    ctx.stroke();
+    // 毛線頭
+    ctx.beginPath();
+    ctx.moveTo(12, 6); ctx.quadraticCurveTo(30, 25, 55, 15);
+    ctx.stroke();
+    ctx.restore();
+    // ==================================================
+
+    // 繪製在天堂漫步的所有毛孩 (套用房間內的高品質貓咪模組)
     const list = gameState.myStarCats || [];
     list.forEach((c, idx) => {
       const px = ((idx * 160 + Date.now() * 0.02) % (canvas.width - 80)) + 40;
-      const py = 120 + ((idx * 67) % 200);
+      const py = 180 + ((idx * 67) % 200); // 確保走在草地上
 
+      // 決定天堂貓咪的面向與走動狀態
+      const facing = (idx % 2 === 0) ? 1 : -1;
+      
+      // 轉換成 drawRoamingCat 能讀取的格式
+      const mockCat = {
+        breed: { color: c.color || '#E67E22', stripe: c.stripe || '#D35400' }
+      };
+
+      // 呼叫房間裡的「實體貓咪」繪製函式
+      drawRoamingCat(ctx, px, py, facing, true, false, false, mockCat);
+
+      // 天使光環 (疊加在貓咪實體頭上)
       ctx.save();
       ctx.translate(px, py);
-      ctx.fillStyle = c.color || '#E67E22';
-      ctx.beginPath();
-      ctx.ellipse(0, 0, 20, 14, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.beginPath();
-      ctx.arc(14, -8, 12, 0, Math.PI * 2);
-      ctx.fill();
-
-      // 天使光環
       ctx.strokeStyle = '#F1C40F';
       ctx.lineWidth = 2.5;
       ctx.beginPath();
-      ctx.ellipse(14, -24, 10, 3, 0, 0, Math.PI * 2);
+      ctx.ellipse(facing * 20, -32, 12, 4, 0, 0, Math.PI * 2);
       ctx.stroke();
 
+      // 名字標籤
       ctx.fillStyle = '#2C3E50';
-      ctx.font = 'bold 11px sans-serif';
-      ctx.fillText(c.name, -10, 26);
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(c.name, 0, 32);
       ctx.restore();
     });
 
