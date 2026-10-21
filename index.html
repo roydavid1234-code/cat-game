@@ -2,7 +2,7 @@
 <html lang="zh-TW" class="h-full bg-[#F7F5F0] text-[#2C2C2C]">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>70貓與你妳 | 貓咪生命養成模擬</title>
   
   <!-- Tailwind CSS -->
@@ -237,57 +237,55 @@
       
       <div class="w-full bg-white border border-[#E5E0D8] rounded-3xl p-4 shadow-sm relative overflow-hidden flex flex-col items-center">
         
-        <div class="w-full flex flex-wrap justify-between items-center gap-2 mb-2">
-          <div class="flex items-center space-x-2">
-            <span id="ui-country-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-[#F7F5F0] text-[#9E2A2B] border border-[#E5E0D8]">
+        <!-- 頂部狀態列：手機上自適應雙層排列，不擁擠 -->
+        <div class="w-full flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <span id="ui-country-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#F7F5F0] text-[#9E2A2B] border border-[#E5E0D8]">
               🇹🇼 臺灣 · 巷弄日光
             </span>
-            <span id="ui-stage-badge" class="px-2.5 py-1 rounded-full text-xs font-bold bg-[#2D6A4F]/10 text-[#2D6A4F]">
+            <span id="ui-stage-badge" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#2D6A4F]/10 text-[#2D6A4F]">
               幼貓階段
             </span>
-            <span id="ui-state-pill" class="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/10 text-amber-700">
-              🐾 正在自由散步...
+            <span id="ui-state-pill" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-700">
+              🐾 正在散步...
             </span>
           </div>
 
-          <!-- 控制與保存按鈕 -->
-          <div class="flex items-center space-x-1.5 text-xs">
-            <button onclick="saveCurrentCatProgress()" class="px-2.5 py-1 rounded-lg border border-amber-600 bg-amber-500 hover:bg-amber-600 text-white font-bold flex items-center gap-1 transition shadow-sm">
-              <i class="fa-solid fa-floppy-disk"></i>
-              <span>保存進度</span>
-            </button>
-            <div class="text-[#E5E0D8]">|</div>
-            <button onclick="togglePlayPause()" id="btn-toggle-pause" class="px-2.5 py-1 rounded-lg border border-[#9E2A2B] bg-[#9E2A2B] text-white font-bold flex items-center gap-1 transition">
-              <span id="pause-btn-text">⏸ 暫停</span>
-            </button>
-            <div class="text-[#E5E0D8]">|</div>
-            <button onclick="setTimeSpeed(1)" id="spd-btn-1" class="px-2 py-0.5 rounded border border-[#9E2A2B] bg-[#9E2A2B] text-white font-bold">1x</button>
-            <button onclick="setTimeSpeed(3)" id="spd-btn-3" class="px-2 py-0.5 rounded border border-[#E5E0D8] bg-[#F7F5F0]">3x</button>
-            <button onclick="setTimeSpeed(5)" id="spd-btn-5" class="px-2 py-0.5 rounded border border-[#E5E0D8] bg-[#F7F5F0]">5x</button>
-            <button onclick="setTimeSpeed(10)" id="spd-btn-10" class="px-2 py-0.5 rounded border border-[#E5E0D8] bg-[#F7F5F0]">10x</button>
-          </div>
-          
-          <div class="flex items-center space-x-3">
-            <div id="ui-cat-age-text" class="font-serif font-bold text-sm text-[#2C2C2C]">
-              0 歲 0 個月大
+          <div class="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-2 text-xs">
+            <div id="ui-cat-age-text" class="font-serif font-bold text-xs sm:text-sm text-[#2C2C2C]">
+              0 歲 0 個月
+            </div>
+            <div class="flex items-center space-x-1">
+              <button onclick="saveCurrentCatProgress()" class="px-2 py-1 rounded-lg border border-amber-600 bg-amber-500 text-white font-bold flex items-center gap-1 transition shadow-sm text-[11px]">
+                <i class="fa-solid fa-floppy-disk"></i>
+                <span>保存</span>
+              </button>
+              <button onclick="togglePlayPause()" id="btn-toggle-pause" class="px-2 py-1 rounded-lg border border-[#9E2A2B] bg-[#9E2A2B] text-white font-bold text-[11px]">
+                <span id="pause-btn-text">⏸ 暫停</span>
+              </button>
+              <button onclick="setTimeSpeed(1)" id="spd-btn-1" class="px-1.5 py-0.5 rounded border border-[#9E2A2B] bg-[#9E2A2B] text-white font-bold text-[10px]">1x</button>
+              <button onclick="setTimeSpeed(3)" id="spd-btn-3" class="px-1.5 py-0.5 rounded border border-[#E5E0D8] bg-[#F7F5F0] text-[10px]">3x</button>
+              <button onclick="setTimeSpeed(5)" id="spd-btn-5" class="px-1.5 py-0.5 rounded border border-[#E5E0D8] bg-[#F7F5F0] text-[10px]">5x</button>
+              <button onclick="setTimeSpeed(10)" id="spd-btn-10" class="px-1.5 py-0.5 rounded border border-[#E5E0D8] bg-[#F7F5F0] text-[10px]">10x</button>
             </div>
           </div>
         </div>
 
-        <div id="cat-speech-bubble" class="w-full max-w-lg bg-[#F7F5F0] border border-[#E5E0D8] rounded-2xl p-2.5 mb-2 text-xs text-[#2C2C2C] text-center relative shadow-sm transition-all duration-300">
+        <div id="cat-speech-bubble" class="w-full max-w-lg bg-[#F7F5F0] border border-[#E5E0D8] rounded-2xl p-2 mb-2 text-xs text-[#2C2C2C] text-center relative shadow-sm">
           <span id="speech-text">「喵～世界很大，但我眼裡的宇宙，剛好只裝得下你 🐾✨」</span>
           <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-[#F7F5F0]"></div>
         </div>
 
-        <div id="roaming-stage" class="relative w-full h-80 sm:h-96 bg-[#FAF8F5] rounded-2xl border border-[#E5E0D8] overflow-hidden cursor-crosshair">
-          <canvas id="roam-canvas" width="920" height="380" class="pixelated w-full h-full block"></canvas>
+        <!-- 關鍵改進：移除硬寫的 h-80，改用 aspect-[4/3] sm:aspect-[16/10] 鎖定黃金比例，手機不再扁平 -->
+        <div id="roaming-stage" class="relative w-full aspect-[4/3] sm:aspect-[16/10] max-h-[480px] bg-[#FAF8F5] rounded-2xl border border-[#E5E0D8] overflow-hidden cursor-crosshair shadow-inner">
+          <canvas id="roam-canvas" width="640" height="480" class="pixelated w-full h-full block"></canvas>
 
-          <div id="starve-overlay" class="hidden absolute top-4 left-1/2 -translate-x-1/2 bg-red-600/95 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-lg animate-bounce flex items-center gap-1.5">
-            <i class="fa-solid fa-triangle-exclamation"></i> 肚子太餓了！貓咪已經無力走動，請立刻餵食！
+          <div id="starve-overlay" class="hidden absolute top-3 left-1/2 -translate-x-1/2 bg-red-600/95 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg animate-bounce flex items-center gap-1.5 whitespace-nowrap">
+            <i class="fa-solid fa-triangle-exclamation"></i> 肚子太餓了！請立刻餵食！
           </div>
 
-          <div id="sick-overlay" class="hidden absolute top-14 left-1/2 -translate-x-1/2 bg-purple-600/95 text-white px-4 py-1.5 rounded-full text-xs font-bold shadow-lg flex items-center gap-1.5">
-            <i class="fa-solid fa-head-side-cough"></i> 貓咪生病虛弱中！健康抵抗力過低，請盡快看醫生與悉心照料！
+          <div id="sick-overlay" class="hidden absolute top-11 left-1/2 -translate-x-1/2 bg-purple-600/95 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg flex items-center gap-1.5 whitespace-nowrap">
+            <i class="fa-solid fa-head-side-cough"></i> 貓咪虛弱生病中，請盡快看醫生！
           </div>
         </div>
 

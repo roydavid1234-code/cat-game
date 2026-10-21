@@ -14,3 +14,8 @@ cat-game/
     ├── ui-handler.js
     ├── loader.js
     └── main.js
+
+
+在 GitHub 網站取得 Token
+立刻複製那串以 ghp_ 開頭的代碼（離開頁面後就看不到了，請先複製備用）。
+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

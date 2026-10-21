@@ -85,86 +85,89 @@ function drawHighQualityRoomScene(ctx, w, h) {
   ctx.fillStyle = '#F4EFE6';
   ctx.fillRect(0, 0, w, h);
 
-  const rugGrad = ctx.createRadialGradient(w/2 - 20, h/2 + 20, 40, w/2 - 20, h/2 + 20, 270);
+  // 地毯 (依照畫面中心等比縮放)
+  const rugGrad = ctx.createRadialGradient(w/2, h/2 + 25, 30, w/2, h/2 + 25, w * 0.38);
   rugGrad.addColorStop(0, '#ECE5D8');
   rugGrad.addColorStop(1, '#E1D9CC');
   ctx.fillStyle = rugGrad;
   ctx.beginPath();
-  ctx.ellipse(w / 2 - 20, h / 2 + 20, 270, 105, 0, 0, Math.PI * 2);
+  ctx.ellipse(w / 2, h / 2 + 25, w * 0.36, h * 0.22, 0, 0, Math.PI * 2);
   ctx.fill();
 
+  // 木質地板線條
   ctx.strokeStyle = '#E0DAD0';
   ctx.lineWidth = 1.5;
-  for (let y = 50; y < h; y += 65) {
+  for (let y = 60; y < h; y += 60) {
     ctx.beginPath();
     ctx.moveTo(0, y);
     ctx.lineTo(w, y);
     ctx.stroke();
   }
 
-  // 貓窩
+  // 溫暖貓窩 (右上角)
   ctx.save();
   ctx.fillStyle = '#C8B9A6';
-  ctx.fillRect(740, 55, 120, 85);
+  ctx.fillRect(w - 130, 45, 115, 80);
   ctx.fillStyle = '#DFD6C9';
-  ctx.fillRect(746, 61, 108, 73);
+  ctx.fillRect(w - 124, 51, 103, 68);
   ctx.fillStyle = '#C0392B';
   ctx.beginPath();
-  ctx.roundRect(755, 95, 90, 32, 10);
+  ctx.roundRect(w - 116, 85, 87, 30, 8);
   ctx.fill();
   ctx.fillStyle = '#6E2C00';
   ctx.font = 'bold 11px sans-serif';
-  ctx.fillText('🐾 溫暖貓窩', 768, 78);
+  ctx.fillText('🐾 貓窩', w - 100, 68);
   ctx.restore();
 
-  // 貓砂盆
+  // 貓砂盆 (右下角)
   ctx.save();
   ctx.fillStyle = '#7F8C8D';
   ctx.beginPath();
-  ctx.roundRect(740, 255, 120, 75, 14);
+  ctx.roundRect(w - 130, h - 95, 115, 75, 12);
   ctx.fill();
   ctx.fillStyle = '#BDC3C7';
   ctx.beginPath();
-  ctx.roundRect(746, 261, 108, 63, 10);
+  ctx.roundRect(w - 124, h - 89, 103, 63, 10);
   ctx.fill();
   ctx.fillStyle = '#34495E';
   ctx.font = 'bold 11px sans-serif';
-  ctx.fillText('🚽 專用礦砂盆', 758, 298);
+  ctx.fillText('🚽 專用礦砂盆', w - 112, h - 52);
   ctx.restore();
 
-  drawFoodAndWater(ctx);
+  // 水碗與食盆 (左下角)
+  drawFoodAndWater(ctx, w, h);
 }
 
-function drawFoodAndWater(ctx) {
+function drawFoodAndWater(ctx, w, h) {
   const waterRatio = gameState.currentCat ? Math.max(0, Math.min(1, gameState.currentCat.water / 100)) : 1;
   ctx.fillStyle = '#E5E8E8';
   ctx.beginPath();
-  ctx.arc(80, 310, 28, 0, Math.PI * 2);
+  ctx.arc(60, h - 60, 26, 0, Math.PI * 2);
   ctx.fill();
   if (waterRatio > 0.05) {
     ctx.fillStyle = '#5DADE2';
     ctx.beginPath();
-    ctx.arc(80, 310, 21 * Math.sqrt(waterRatio), 0, Math.PI * 2);
+    ctx.arc(60, h - 60, 20 * Math.sqrt(waterRatio), 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.fillStyle = '#2C3E50';
   ctx.font = 'bold 10px sans-serif';
-  ctx.fillText(`水盆(${gameState.currentCat ? Math.round(gameState.currentCat.water) : 100}%)`, 52, 350);
+  ctx.fillText(`水盆(${gameState.currentCat ? Math.round(gameState.currentCat.water) : 100}%)`, 36, h - 22);
 
   const hungerRatio = gameState.currentCat ? Math.max(0, Math.min(1, gameState.currentCat.hunger / 100)) : 1;
   ctx.fillStyle = '#EDBB99';
   ctx.beginPath();
-  ctx.arc(175, 310, 28, 0, Math.PI * 2);
+  ctx.arc(140, h - 60, 26, 0, Math.PI * 2);
   ctx.fill();
   if (hungerRatio > 0.05) {
     ctx.fillStyle = '#6E2C00';
     ctx.beginPath();
-    ctx.arc(175, 310, 21 * Math.sqrt(hungerRatio), 0, Math.PI * 2);
+    ctx.arc(140, h - 60, 20 * Math.sqrt(hungerRatio), 0, Math.PI * 2);
     ctx.fill();
   }
   ctx.fillStyle = '#2C3E50';
   ctx.font = 'bold 10px sans-serif';
-  ctx.fillText(`食碗(${gameState.currentCat ? Math.round(gameState.currentCat.hunger) : 100}%)`, 147, 350);
+  ctx.fillText(`食碗(${gameState.currentCat ? Math.round(gameState.currentCat.hunger) : 100}%)`, 116, h - 22);
 }
 
 function drawRoomPoops(ctx) {
@@ -295,12 +298,16 @@ function updateRoamingPhysics(w, h, updateStatusUI, spawnFloatingFeedback) {
   }
 }
 
+// 睡窩位置調整 (睡在右上角貓窩內)
 function startSleepingInCage(updateStatusUI, spawnFloatingFeedback) {
   const r = gameState.roamState;
   const c = gameState.currentCat;
+  const canvas = document.getElementById('roam-canvas');
+  const w = canvas ? canvas.width : 640;
+  
   r.isSleepingInCage = true;
-  r.x = 790;
-  r.y = 110;
+  r.x = w - 75;
+  r.y = 95;
   r.sleepTargetSeconds = Math.floor(Math.random() * 30) + 1;
   r.sleepElapsedSeconds = 0;
 
@@ -314,11 +321,11 @@ function startSleepingInCage(updateStatusUI, spawnFloatingFeedback) {
     if (r.sleepElapsedSeconds >= r.sleepTargetSeconds) {
       clearInterval(sleepInterval);
       r.isSleepingInCage = false;
-      r.x = 720;
-      r.y = 120;
+      r.x = w - 145;
+      r.y = 110;
       if (Math.random() < 0.4) {
         c.health = Math.min(100, c.health + 1);
-        spawnFloatingFeedback(720, 100, "睡得好香！抵抗力+1 🩺");
+        spawnFloatingFeedback(r.x, r.y - 20, "睡得好香！抵抗力+1 🩺");
       }
       document.getElementById('ui-state-pill').innerText = "🐾 睡飽了，精神滿滿！";
       updateStatusUI();
