@@ -31,13 +31,12 @@
     };
   </script>
 
-  <!-- Google Fonts & FontAwesome (補齊字型，避免字距高度跑版) -->
+  <!-- Google Fonts & FontAwesome -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Kiwi+Maru:wght@400;500;700&family=Noto+Serif+TC:wght@400;600;900&family=Zen+Maru+Gothic:wght@400;500;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-  <!-- 獨立樣式表 -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="h-full flex flex-col font-sans bg-[#F7F5F0] text-[#2C2C2C] select-none overflow-x-hidden">
@@ -56,24 +55,19 @@
     </div>
     
     <div class="flex items-center space-x-3 text-xs font-medium text-[#7F7B75]">
-          <!-- 音效按鈕 -->
-    <!-- 音效按鈕：改為上下雙行排列，節省橫向空間 -->
-        <div id="sound-btn" onclick="toggleAudio()" class="cursor-pointer hover:text-[#9E2A2B] flex items-center gap-1.5 transition whitespace-nowrap flex-shrink-0">
-          <i class="fa-solid fa-volume-high text-[#9E2A2B] text-base" id="sound-icon"></i>
-          <div class="flex flex-col text-left leading-tight select-none">
-            <span class="text-[9px] text-[#7F7B75] font-medium">音效</span>
-            <span id="sound-text" class="text-xs font-bold text-[#2C2C2C]">開</span>
-          </div>
+      <div id="sound-btn" onclick="toggleAudio()" class="cursor-pointer hover:text-[#9E2A2B] flex items-center gap-1.5 transition whitespace-nowrap flex-shrink-0">
+        <i class="fa-solid fa-volume-high text-[#9E2A2B] text-base" id="sound-icon"></i>
+        <div class="flex flex-col text-left leading-tight select-none">
+          <span class="text-[9px] text-[#7F7B75] font-medium">音效</span>
+          <span id="sound-text" class="text-xs font-bold text-[#2C2C2C]">開</span>
         </div>
+      </div>
 
-        <!-- 貓幣徽章：只顯示「🪙 貓幣: 0」，隱藏零食以釋放手機空間 -->
-        <div id="coin-counter-badge" class="items-center gap-1 bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full font-bold border border-amber-300 hidden whitespace-nowrap flex-shrink-0 text-xs">
-          🪙 貓幣: <span id="val-coins">0</span>
-        </div>
+      <div id="coin-counter-badge" class="items-center gap-1 bg-amber-100 text-amber-800 px-2.5 py-0.5 rounded-full font-bold border border-amber-300 hidden whitespace-nowrap flex-shrink-0 text-xs">
+        🪙 貓幣: <span id="val-coins">1</span>
+      </div>
 
-        <!-- 零食佔位（頂部不再顯示，保留隱藏節點供商店後台讀取） -->
-        <div id="snack-counter-badge" class="hidden"></div>
-
+      <div id="snack-counter-badge" class="hidden"></div>
       <div class="text-[#E5E0D8]">|</div>
       
       <button onclick="openMyMemoryModal()" class="text-[#2C2C2C] hover:text-[#9E2A2B] font-bold flex items-center gap-1">
@@ -89,20 +83,12 @@
   <!-- MAIN CONTAINER -->
   <main class="flex-1 max-w-6xl w-full mx-auto p-4 sm:p-6 flex flex-col justify-center">
 
-    <!-- ===================================================================
-         PHASE 1: 誕生前 (LANDING PAGE)
-         =================================================================== -->
+    <!-- PHASE 1: 誕生前 -->
     <section id="phase-landing" class="w-full flex flex-col gap-8 my-auto">
       
       <div class="w-full flex flex-col lg:flex-row gap-8 items-start">
         <div class="w-full lg:w-5/12 flex flex-col justify-between space-y-6">
           <div>
-            <!-- 已隱藏此標籤 -->
-            <span class="hidden text-xs font-semibold px-2.5 py-1 rounded-full bg-[#E5E0D8] text-[#7F7B75] tracking-wider uppercase">
-              2026 國際認證 · 貓星球守護殿堂版
-            </span>
-
-            <!-- 口語語錄：直接融入背景，無框架圍繞，不帶「你/妳」字眼 -->
             <div class="mt-4 px-1 py-2">
               <p class="text-sm sm:text-base text-[#4A4641] font-sans leading-relaxed tracking-wide text-left">
                 下班推開家門，總有個毛茸茸的小傢伙小跑步跑過來蹭蹭腳。<br>
@@ -112,7 +98,6 @@
             </div>
           </div>
 
-          <!-- 真實統計數據 -->
           <div class="grid grid-cols-2 gap-4 pt-2 border-t border-[#E5E0D8]">
             <div>
               <div id="ticker-birthed" class="font-serif font-black text-3xl sm:text-4xl text-[#2C2C2C]">0</div>
@@ -129,7 +114,6 @@
               <i class="fa-solid fa-paw"></i> 誕生主角貓咪（取名並開啟貓生）
             </button>
 
-            <!-- 繼續陪伴按鈕 -->
             <button onclick="continueSavedCat()" id="btn-continue-game" class="w-full py-3 px-8 rounded-2xl bg-[#2D6A4F] hover:bg-[#1B4332] text-white font-serif font-bold text-base shadow-md transition transform active:scale-[0.98] flex items-center justify-center gap-2">
               <i class="fa-solid fa-play text-sm"></i>
               <span id="continue-btn-text">繼續陪伴（讀取保存進度）</span>
@@ -139,14 +123,11 @@
           </div>
         </div>
 
-        <!-- 玩家貓咪出生熱門 TOP 10 -->
         <div class="w-full lg:w-7/12 bg-white border border-[#E5E0D8] rounded-3xl p-6 sm:p-7 shadow-sm">
           <div class="flex justify-between items-center mb-5">
             <div>
               <h3 class="font-serif font-bold text-lg text-[#2C2C2C]">貓咪出生數量 TOP 10</h3>
-              <p class="text-xs text-[#7F7B75] mt-0.5">
-                依據真實誕生的品種統計分佈
-              </p>
+              <p class="text-xs text-[#7F7B75] mt-0.5">依據真實誕生的品種統計分佈</p>
             </div>
             <button onclick="openBreedModal()" class="px-3.5 py-1.5 rounded-xl border border-[#E5E0D8] bg-[#F7F5F0] hover:border-[#9E2A2B] text-xs font-bold text-[#2C2C2C] transition flex items-center gap-1.5">
               <i class="fa-solid fa-book-open text-[#9E2A2B]"></i> 查看全部圖鑑 (70種)
@@ -156,26 +137,22 @@
         </div>
       </div>
 
-      <!-- 貓星球能力排行榜 -->
+      <!-- 排行榜 -->
       <div class="w-full bg-white border border-[#E5E0D8] rounded-3xl p-6 sm:p-7 shadow-sm">
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 pb-3 border-b border-[#E5E0D8]">
           <div>
-            <!-- 排行榜標題 -->
-<h3 class="font-serif font-bold text-sm text-[#2C2C2C] flex items-center gap-2">
-  <i class="fa-solid fa-crown text-amber-500"></i> 貓星球排行榜
-</h3>
-
-<!-- 頁籤按鈕：順序調整為「成長榜」第一、「魅力」第二 -->
-<!-- 貓星球排行榜標籤：手機版一排 3 個 (3x2 網格) -->
-<!-- 貓星球排行榜標籤：手機版一排 3 個 (3x2 網格) -->
-<div class="grid grid-cols-3 gap-1.5 py-1 text-xs">
-  <button id="hrank-tab-growth" onclick="switchHomeRankTab('growth')" class="py-1.5 px-1 rounded-lg bg-[#9E2A2B] text-white font-bold transition shadow-sm text-center truncate">⏳ 成長榜</button>
-  <button id="hrank-tab-charm" onclick="switchHomeRankTab('charm')" class="py-1.5 px-1 rounded-lg text-[#7F7B75] bg-[#F7F5F0] hover:text-[#2C2C2C] transition text-center truncate">✨ 魅力</button>
-  <button id="hrank-tab-cute" onclick="switchHomeRankTab('cute')" class="py-1.5 px-1 rounded-lg text-[#7F7B75] bg-[#F7F5F0] hover:text-[#2C2C2C] transition text-center truncate">🥰 可愛</button>
-  <button id="hrank-tab-affection" onclick="switchHomeRankTab('affection')" class="py-1.5 px-1 rounded-lg text-[#7F7B75] bg-[#F7F5F0] hover:text-[#2C2C2C] transition text-center truncate">❤️ 親密</button>
-  <button id="hrank-tab-smarts" onclick="switchHomeRankTab('smarts')" class="py-1.5 px-1 rounded-lg text-[#7F7B75] bg-[#F7F5F0] hover:text-[#2C2C2C] transition text-center truncate">💡 智力</button>
-  <button id="hrank-tab-agility" onclick="switchHomeRankTab('agility')" class="py-1.5 px-1 rounded-lg text-[#7F7B75] bg-[#F7F5F0] hover:text-[#2C2C2C] transition text-center truncate">⚡ 靈巧</button>
-</div>
+            <h3 class="font-serif font-bold text-sm text-[#2C2C2C] flex items-center gap-2">
+              <i class="fa-solid fa-crown text-amber-500"></i> 貓星球排行榜
+            </h3>
+            <div class="grid grid-cols-3 gap-1.5 py-1 text-xs mt-2">
+              <button id="hrank-tab-growth" onclick="switchHomeRankTab('growth')" class="py-1.5 px-1 rounded-lg bg-[#9E2A2B] text-white font-bold transition shadow-sm text-center truncate">⏳ 成長榜</button>
+              <button id="hrank-tab-charm" onclick="switchHomeRankTab('charm')" class="py-1.5 px-1 rounded-lg text-[#7F7B75] bg-[#F7F5F0] hover:text-[#2C2C2C] transition text-center truncate">✨ 魅力</button>
+              <button id="hrank-tab-cute" onclick="switchHomeRankTab('cute')" class="py-1.5 px-1 rounded-lg text-[#7F7B75] bg-[#F7F5F0] hover:text-[#2C2C2C] transition text-center truncate">🥰 可愛</button>
+              <button id="hrank-tab-affection" onclick="switchHomeRankTab('affection')" class="py-1.5 px-1 rounded-lg text-[#7F7B75] bg-[#F7F5F0] hover:text-[#2C2C2C] transition text-center truncate">❤️ 親密</button>
+              <button id="hrank-tab-smarts" onclick="switchHomeRankTab('smarts')" class="py-1.5 px-1 rounded-lg text-[#7F7B75] bg-[#F7F5F0] hover:text-[#2C2C2C] transition text-center truncate">💡 智力</button>
+              <button id="hrank-tab-agility" onclick="switchHomeRankTab('agility')" class="py-1.5 px-1 rounded-lg text-[#7F7B75] bg-[#F7F5F0] hover:text-[#2C2C2C] transition text-center truncate">⚡ 靈巧</button>
+            </div>
+          </div>
         </div>
 
         <div id="home-rank-list" class="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs"></div>
@@ -189,15 +166,9 @@
 
       <!-- 貓星球專區 -->
       <div id="cat-planet-section" class="w-full bg-gradient-to-b from-[#2B2D42] via-[#1D1E2C] to-[#141520] text-white rounded-3xl p-6 sm:p-9 shadow-xl relative overflow-hidden my-4 border border-indigo-900/50">
-        <div class="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
-        
         <div class="relative z-10 text-center max-w-2xl mx-auto mb-6">
-          <div class="inline-block p-3 rounded-full bg-indigo-500/20 text-indigo-300 text-2xl mb-3">
-            🌌 🌟 🐾
-          </div>
-          <h3 class="font-serif font-black text-2xl sm:text-3xl text-indigo-100 tracking-wide">
-            貓星球 · 永遠的溫柔守護
-          </h3>
+          <div class="inline-block p-3 rounded-full bg-indigo-500/20 text-indigo-300 text-2xl mb-3">🌌 🌟 🐾</div>
+          <h3 class="font-serif font-black text-2xl sm:text-3xl text-indigo-100 tracking-wide">貓星球 · 永遠的溫柔守護</h3>
           <p class="text-xs sm:text-sm text-indigo-200/80 mt-2 font-serif leading-relaxed">
             生命或許有限，但愛與呼嚕聲在星河裡永遠不會消散。<br>
             這裡靜靜停泊著回到星空的毛孩子們，點擊自己的愛貓肖像，聽聽牠在星空留下的聲音。
@@ -206,12 +177,8 @@
 
         <div class="relative z-10 flex justify-center mb-6">
           <div class="bg-white/10 backdrop-blur-md p-1 rounded-xl border border-indigo-400/30 flex gap-1 text-xs font-bold">
-            <button onclick="switchPlanetFilter('all')" id="planet-filter-all" class="py-1.5 px-4 rounded-lg bg-indigo-600 text-white transition shadow-sm">
-              🌟 全部貓咪
-            </button>
-            <button onclick="switchPlanetFilter('mine')" id="planet-filter-mine" class="py-1.5 px-4 rounded-lg text-indigo-200 hover:text-white transition">
-              🐾 自己的貓咪
-            </button>
+            <button onclick="switchPlanetFilter('all')" id="planet-filter-all" class="py-1.5 px-4 rounded-lg bg-indigo-600 text-white transition shadow-sm">🌟 全部貓咪</button>
+            <button onclick="switchPlanetFilter('mine')" id="planet-filter-mine" class="py-1.5 px-4 rounded-lg text-indigo-200 hover:text-white transition">🐾 自己的貓咪</button>
           </div>
         </div>
 
@@ -219,21 +186,14 @@
         <div id="cat-planet-pagination" class="relative z-10 flex justify-center items-center gap-3 mt-6 text-xs text-indigo-200"></div>
       </div>
 
-      <!-- 貓咪花園天堂公園 -->
+      <!-- 天堂公園 -->
       <div id="cat-paradise-garden" class="w-full bg-gradient-to-b from-[#E8F8F5] via-[#EAF2F8] to-[#FCF3CF] border-2 border-emerald-300/80 rounded-3xl p-6 sm:p-8 shadow-md relative overflow-hidden">
         <div class="text-center max-w-xl mx-auto mb-4">
-          <span class="text-xs font-bold px-3 py-1 bg-emerald-600/10 text-emerald-800 rounded-full">
-            🌸 彩虹橋彼端 · 永恆的無憂天堂公園
-          </span>
-          <h3 class="font-serif font-black text-xl sm:text-2xl text-[#2C2C2C] mt-2">
-            貓咪花園天堂
-          </h3>
-          <p class="text-xs text-[#55524D] mt-1 font-serif">
-            在草地上自由奔跑探險，偶爾溜出花園外散步，貓咪們會互相蹭蹭、玩耍與說悄悄話。
-          </p>
+          <span class="text-xs font-bold px-3 py-1 bg-emerald-600/10 text-emerald-800 rounded-full">🌸 彩虹橋彼端 · 永恆的無憂天堂公園</span>
+          <h3 class="font-serif font-black text-xl sm:text-2xl text-[#2C2C2C] mt-2">貓咪花園天堂</h3>
+          <p class="text-xs text-[#55524D] mt-1 font-serif">在草地上自由奔跑探險，偶爾溜出花園外散步，貓咪們會互相蹭蹭、玩耍與說悄悄話。</p>
         </div>
 
-        <!-- 貓咪天堂 -->
         <div class="relative w-full aspect-[2/1] max-h-[400px] bg-[#FAF8F5] rounded-2xl border border-[#E5E0D8] overflow-hidden shadow-inner mt-4">
           <canvas id="paradise-canvas" width="800" height="400" class="pixelated w-full h-full block"></canvas>
         </div>
@@ -241,35 +201,21 @@
 
     </section>
 
-    <!-- ===================================================================
-         PHASE 2: 誕生後 (GAMEPLAY SCREEN)
-         =================================================================== -->
+    <!-- PHASE 2: 誕生後 -->
     <section id="phase-game" class="hidden w-full flex flex-col gap-4 my-auto">
-      
       <div class="w-full bg-white border border-[#E5E0D8] rounded-3xl p-4 shadow-sm relative overflow-hidden flex flex-col items-center">
-        
-        <!-- 頂部狀態列：手機上自適應雙層排列，不擁擠 -->
         <div class="w-full flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 mb-2">
           <div class="flex flex-wrap items-center gap-1.5">
-            <span id="ui-country-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#F7F5F0] text-[#9E2A2B] border border-[#E5E0D8]">
-              🇹🇼 臺灣 · 巷弄日光
-            </span>
-            <span id="ui-stage-badge" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#2D6A4F]/10 text-[#2D6A4F]">
-              幼貓階段
-            </span>
-            <span id="ui-state-pill" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-700">
-              🐾 正在散步...
-            </span>
+            <span id="ui-country-badge" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#F7F5F0] text-[#9E2A2B] border border-[#E5E0D8]">🇹🇼 臺灣 · 巷弄日光</span>
+            <span id="ui-stage-badge" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#2D6A4F]/10 text-[#2D6A4F]">幼貓階段</span>
+            <span id="ui-state-pill" class="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/10 text-amber-700">🐾 正在散步...</span>
           </div>
 
           <div class="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-2 text-xs">
-            <div id="ui-cat-age-text" class="font-serif font-bold text-xs sm:text-sm text-[#2C2C2C]">
-              0 歲 0 個月
-            </div>
+            <div id="ui-cat-age-text" class="font-serif font-bold text-xs sm:text-sm text-[#2C2C2C]">0 歲 0 個月</div>
             <div class="flex items-center space-x-1">
               <button onclick="saveCurrentCatProgress()" class="px-2 py-1 rounded-lg border border-amber-600 bg-amber-500 text-white font-bold flex items-center gap-1 transition shadow-sm text-[11px]">
-                <i class="fa-solid fa-floppy-disk"></i>
-                <span>保存</span>
+                <i class="fa-solid fa-floppy-disk"></i><span>保存</span>
               </button>
               <button onclick="togglePlayPause()" id="btn-toggle-pause" class="px-2 py-1 rounded-lg border border-[#9E2A2B] bg-[#9E2A2B] text-white font-bold text-[11px]">
                 <span id="pause-btn-text">⏸ 暫停</span>
@@ -287,7 +233,6 @@
           <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[8px] border-t-[#F7F5F0]"></div>
         </div>
 
-        <!-- 關鍵改進：移除硬寫的 h-80，改用 aspect-[4/3] sm:aspect-[16/10] 鎖定黃金比例，手機不再扁平 -->
         <div id="roaming-stage" class="relative w-full aspect-[4/3] sm:aspect-[16/10] max-h-[480px] bg-[#FAF8F5] rounded-2xl border border-[#E5E0D8] overflow-hidden cursor-crosshair shadow-inner">
           <canvas id="roam-canvas" width="640" height="480" class="pixelated w-full h-full block"></canvas>
 
@@ -302,10 +247,9 @@
 
       </div>
 
-      <!-- 下半部：照護與指標 -->
+      <!-- 照護與指標 -->
       <div class="w-full grid grid-cols-1 lg:grid-cols-12 gap-4">
         
-        <!-- 操作與照護面板 -->
         <div class="lg:col-span-4 bg-white border border-[#E5E0D8] rounded-3xl p-4 shadow-sm space-y-2.5">
           <h4 class="font-serif font-bold text-sm text-[#2C2C2C] flex items-center justify-between border-b border-[#E5E0D8] pb-1.5">
             <span>照護與日常互動</span>
@@ -313,35 +257,40 @@
 
           <div class="p-2 bg-[#FAF8F5] border border-[#E5E0D8] rounded-xl text-[11px] text-[#55524D] leading-tight flex items-center gap-1.5">
             <i class="fa-solid fa-circle-info text-[#9E2A2B]"></i>
-            <span id="mode-hint-text">逗貓棒在畫布滑動可吸引貓咪；摸摸與零食可恢復活力！</span>
+            <span id="mode-hint-text">逗貓棒在畫布滑動可吸引貓咪；摸摸與梳毛可培養感情！</span>
           </div>
 
-          <div class="grid grid-cols-3 gap-1.5">
+          <div class="grid grid-cols-4 gap-1.5">
             <button onclick="setInteractionMode('pet')" id="btn-mode-pet" class="p-2 rounded-xl border border-[#9E2A2B] bg-[#9E2A2B] text-white font-jp text-xs font-bold transition flex flex-col items-center justify-center gap-1 shadow-sm">
               <i class="fa-solid fa-hand-holding-heart text-base"></i>
               <span>撫摸摸頭</span>
-              <small class="text-[9px] opacity-90">提升心情/活力</small>
+              <small class="text-[9px] opacity-90">心情/活力</small>
             </button>
             <button onclick="setInteractionMode('toy')" id="btn-mode-toy" class="p-2 rounded-xl border border-[#E5E0D8] bg-[#F7F5F0] text-[#55524D] hover:text-[#9E2A2B] font-jp text-xs font-bold transition flex flex-col items-center justify-center gap-1">
               <i class="fa-solid fa-feather text-amber-600 text-base"></i>
-              <span>逗貓棒玩耍</span>
-              <small class="text-[9px] text-[#7F7B75]">吸引注意/親密</small>
+              <span>逗貓棒</span>
+              <small class="text-[9px] text-[#7F7B75]">靈巧/心情</small>
             </button>
             <button onclick="setInteractionMode('snack')" id="btn-mode-snack" class="p-2 rounded-xl border border-[#E5E0D8] bg-[#F7F5F0] text-[#55524D] hover:text-[#9E2A2B] font-jp text-xs font-bold transition flex flex-col items-center justify-center gap-1">
               <i class="fa-solid fa-fish text-rose-500 text-base"></i>
               <span>餵貓零食</span>
               <small id="sub-snack-qty" class="text-[9px] text-rose-700 font-bold">(剩 5 個)</small>
             </button>
+            <button onclick="setInteractionMode('groom')" id="btn-mode-groom" class="p-2 rounded-xl border border-[#E5E0D8] bg-[#F7F5F0] text-[#55524D] hover:text-[#9E2A2B] font-jp text-xs font-bold transition flex flex-col items-center justify-center gap-1">
+              <i class="fa-solid fa-brush text-indigo-500 text-base"></i>
+              <span>梳毛整理</span>
+              <small class="text-[9px] text-[#7F7B75]">魅力/心情</small>
+            </button>
           </div>
 
           <div class="grid grid-cols-3 gap-1.5 pt-1">
-            <button onclick="feedDirectFood()" class="p-2.5 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] hover:bg-white text-[#2C2C2C] font-bold transition flex flex-col items-center justify-center gap-1.5 shadow-sm text-xs">
-            <i class="fa-solid fa-bowl-food text-[#E67E22] text-lg"></i>
-            <span>餵主食 (+5)</span>
-          </button>
-            <button onclick="refillWater()" class="p-2 rounded-xl border border-[#E5E0D8] bg-[#F7F5F0] hover:border-sky-600 text-[#2C2C2C] font-jp text-xs font-bold transition flex flex-col items-center justify-center gap-1">
+            <button onclick="feedDirectFood()" id="btn-feed" class="p-2.5 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] hover:bg-white text-[#2C2C2C] font-bold transition flex flex-col items-center justify-center gap-1.5 shadow-sm text-xs">
+              <i class="fa-solid fa-bowl-food text-[#E67E22] text-lg"></i>
+              <span id="feed-btn-text">餵主食 (+5)</span>
+            </button>
+            <button onclick="refillWater()" id="btn-water" class="p-2 rounded-xl border border-[#E5E0D8] bg-[#F7F5F0] hover:border-sky-600 text-[#2C2C2C] font-jp text-xs font-bold transition flex flex-col items-center justify-center gap-1">
               <i class="fa-solid fa-faucet-drip text-sky-500"></i>
-              <span>💧 換水補水 (+5)</span>
+              <span id="water-btn-text">💧 換水補水 (+5)</span>
             </button>
             <button onclick="visitDoctor()" id="btn-doctor" class="p-2.5 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] hover:bg-white text-[#2C2C2C] font-bold transition flex flex-col items-center justify-center gap-1.5 shadow-sm text-xs">
               <i class="fa-solid fa-shield-heart text-purple-500 text-lg"></i>
@@ -361,12 +310,11 @@
           </div>
         </div>
 
-        <!-- 狀態指標系統 -->
         <div class="lg:col-span-4 bg-white border border-[#E5E0D8] rounded-3xl p-4 shadow-sm space-y-2.5">
           <div class="flex items-center justify-between border-b border-[#E5E0D8] pb-1.5">
             <div>
               <h3 id="ui-cat-name" class="font-serif font-bold text-base text-[#2C2C2C]">貓咪</h3>
-              <p id="ui-cat-trait-text" class="text-xs text-[#7F7B75]">米克斯貓</p>
+              <p id="ui-cat-trait-text" class="text-xs text-[#7F7B75] leading-relaxed mt-0.5 whitespace-pre-line"></p>
             </div>
             <span id="ui-affection-badge" class="text-xs font-bold text-[#9E2A2B] bg-[#9E2A2B]/10 px-2.5 py-0.5 rounded-full border border-[#9E2A2B]/20">
               親密: ❤️ 20
@@ -448,7 +396,6 @@
           </div>
         </div>
 
-        <!-- 隨機生活事件 -->
         <div class="lg:col-span-4 bg-white border border-[#E5E0D8] rounded-3xl p-4 shadow-sm flex flex-col justify-between">
           <div>
             <div class="flex justify-between items-center mb-1.5">
@@ -462,12 +409,10 @@
         </div>
 
       </div>
-
     </section>
-
   </main>
 
-  <!-- 彈窗群組 -->
+  <!-- Modals -->
   <div id="cat-custom-alert-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999] hidden flex items-center justify-center p-4">
     <div class="cat-modal-box bg-white border-2 border-[#E5E0D8] rounded-3xl max-w-sm w-full p-6 shadow-2xl space-y-4 text-center">
       <div id="custom-alert-icon" class="w-12 h-12 rounded-full bg-[#9E2A2B]/10 text-[#9E2A2B] flex items-center justify-center text-xl mx-auto">🐾</div>
@@ -475,9 +420,7 @@
         <h4 id="custom-alert-title" class="font-serif font-bold text-lg text-[#2C2C2C]">貓咪小提示</h4>
         <p id="custom-alert-msg" class="text-xs text-[#55524D] mt-2 whitespace-pre-line leading-relaxed"></p>
       </div>
-      <button onclick="closeCustomAlert()" class="w-full py-2.5 rounded-xl bg-[#9E2A2B] hover:bg-[#802122] text-white text-xs font-bold transition shadow-md">
-        確定
-      </button>
+      <button onclick="closeCustomAlert()" class="w-full py-2.5 rounded-xl bg-[#9E2A2B] hover:bg-[#802122] text-white text-xs font-bold transition shadow-md">確定</button>
     </div>
   </div>
 
@@ -493,8 +436,8 @@
         <textarea id="cat-final-farewell-input" rows="3" class="w-full p-3 border border-[#E5E0D8] rounded-xl text-xs bg-[#FAF8F5] focus:outline-none focus:border-[#9E2A2B]" placeholder="願你在貓星球有吃不完的肉泥罐罐，謝謝你這段時光的溫暖陪伴..."></textarea>
       </div>
       <button id="btn-submit-farewell" onclick="submitCatFarewellAndFinish()" class="w-full py-3 rounded-xl bg-[#2B2D42] hover:bg-[#1D1E2C] text-white text-xs font-bold transition shadow-md flex items-center justify-center gap-1.5">
-      <span>🌟 啟程前往貓星球並保存回憶</span>
-    </button>
+        <span>🌟 啟程前往貓星球並保存回憶</span>
+      </button>
     </div>
   </div>
 
@@ -508,11 +451,11 @@
       </div>
       <div class="space-y-2 text-left">
         <div>
-          <label class="block text-[11px] font-bold text-[#7F7B75] mb-1">主人名字 (可自訂)：</label>
-         <input type="text" id="owner-name-input" maxlength="8" placeholder="請輸入主人的名字 (必填，8字內)" value="" class="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs font-bold text-[#2C2C2C] focus:outline-none focus:border-[#9E2A2B]">
+          <label class="block text-[11px] font-bold text-[#7F7B75] mb-1">主人名字 (必填，8字內)：</label>
+          <input type="text" id="owner-name-input" maxlength="8" placeholder="請輸入主人的名字 (必填，8字內)" value="" class="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs font-bold text-[#2C2C2C] focus:outline-none focus:border-[#9E2A2B]">
         </div>
         <div>
-          <label class="block text-[11px] font-bold text-[#9E2A2B] mb-1">貓咪名字 (必填，不可留空)：</label>
+          <label class="block text-[11px] font-bold text-[#9E2A2B] mb-1">貓咪名字 (必填，8字內)：</label>
           <input type="text" id="cat-name-input" maxlength="8" placeholder="請輸入貓咪名字 (必填，8字內)" class="w-full px-3 py-2 rounded-xl border border-[#E5E0D8] bg-[#FAF8F5] text-xs font-bold text-[#2C2C2C] focus:outline-none focus:border-[#9E2A2B]">
         </div>
       </div>
@@ -546,36 +489,35 @@
         持有貓幣：<strong id="shop-coin-display" class="text-amber-800 text-sm">0</strong> 貓幣 | 零食庫存：<strong id="shop-snack-display" class="text-rose-700 text-sm">5</strong> 條
       </div>
       <div class="space-y-2.5 text-xs">
-        <!-- 特級貓咪肉泥零食 -->
-            <div class="p-3 bg-[#FAF8F5] border border-[#E5E0D8] rounded-2xl flex flex-col justify-between">
-              <div>
-                <h4 class="font-bold text-xs text-[#2C2C2C]">🐟 特級貓咪肉泥零食</h4>
-                <p class="text-[10px] text-[#7F7B75] mt-1 leading-relaxed">美味營養肉泥，餵食愛貓可立即回補飽足、活力與好心情，加深親密羈絆。</p>
-              </div>
-              <div class="mt-3">
-                <button onclick="buySnackItem(1)" class="w-full max-w-[170px] mx-auto py-1.5 px-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shadow-sm flex items-center justify-center">
-                  <span id="shop-snack-btn-text">1 貓幣</span>
-                </button>
-              </div>
-            </div>
+        <div class="p-3 bg-[#FAF8F5] border border-[#E5E0D8] rounded-2xl flex flex-col justify-between">
+          <div>
+            <h4 class="font-bold text-xs text-[#2C2C2C]">🐟 特級貓咪肉泥零食</h4>
+            <p class="text-[10px] text-[#7F7B75] mt-1 leading-relaxed">美味營養肉泥，餵食愛貓可立即回補飽足、活力與好心情，加深親密羈絆。</p>
+          </div>
+          <div class="mt-3">
+            <button onclick="buySnackItem(1)" class="w-full max-w-[170px] mx-auto py-1.5 px-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition shadow-sm flex items-center justify-center">
+              <span id="shop-snack-btn-text">1 貓幣</span>
+            </button>
+          </div>
+        </div>
         <div class="p-3 border border-[#E5E0D8] rounded-2xl flex items-center justify-between bg-[#FAF8F5]">
           <div>
             <div class="font-bold text-[#2C2C2C]">💧 自動循環飲水機</div>
-            <div class="text-[11px] text-[#7F7B75]">水份低於 30% 時自動補滿水份</div>
+            <div class="text-[11px] text-[#7F7B75]">水份低於 70% 時每秒補 1%</div>
           </div>
           <button id="btn-buy-water" onclick="buyShopItem('autoWater', 40)" class="px-3 py-1.5 bg-[#9E2A2B] text-white rounded-xl font-bold">40 貓幣</button>
         </div>
         <div class="p-3 border border-[#E5E0D8] rounded-2xl flex items-center justify-between bg-[#FAF8F5]">
           <div>
             <div class="font-bold text-[#2C2C2C]">🥣 定時自動餵食器</div>
-            <div class="text-[11px] text-[#7F7B75]">飽足低於 30% 時自動補充乾糧</div>
+            <div class="text-[11px] text-[#7F7B75]">飽足低於 70% 時每秒補 1%</div>
           </div>
           <button id="btn-buy-feeder" onclick="buyShopItem('autoFeeder', 45)" class="px-3 py-1.5 bg-[#9E2A2B] text-white rounded-xl font-bold">45 貓幣</button>
         </div>
         <div class="p-3 border border-[#E5E0D8] rounded-2xl flex items-center justify-between bg-[#FAF8F5]">
           <div>
             <div class="font-bold text-[#2C2C2C]">🧹 智能除臭自動貓砂機</div>
-            <div class="text-[11px] text-[#7F7B75]">地板有便便時自動秒清，保持整潔</div>
+            <div class="text-[11px] text-[#7F7B75]">自動巡邏吸走便便，並增加 1 貓幣</div>
           </div>
           <button id="btn-buy-cleaner" onclick="buyShopItem('autoCleaner', 60)" class="px-3 py-1.5 bg-[#9E2A2B] text-white rounded-xl font-bold">60 貓幣</button>
         </div>
@@ -596,7 +538,6 @@
     </div>
   </div>
 
-  <!-- 以 ES Module 載入主邏輯 (不經由 loader fetch，排版絕不失效) -->
   <script type="module" src="js/main.js"></script>
 </body>
 </html>

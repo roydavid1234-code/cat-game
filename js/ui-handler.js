@@ -15,6 +15,8 @@ import { uploadStarCatToCloud, uploadBirthToCloud } from './cloud-db.js';
 
 let gameLoopInterval = null;
 let doctorCdTimer = null;
+let feedCdTimer = null;
+let waterCdTimer = null;
 
 // ==========================================
 // 稀有度判定與 0~20 能力值隨機生成
@@ -27,6 +29,23 @@ function getBreedRarityTier(breed) {
   if (/布偶|暹羅|俄羅斯藍|波斯|挪威森林|伯曼|土耳其/.test(name)) return 3;
   if (/英短|美短|摺耳|金吉拉|異國短毛|蘇格蘭/.test(name)) return 2;
   return 1;
+}
+
+function getRandomBreedByRarity() {
+  const weights = { 1: 50, 2: 25, 3: 14, 4: 8, 5: 3 };
+  const weightedList = ALL_BREEDS_DATABASE.map(breed => {
+    const tier = getBreedRarityTier(breed);
+    return { breed, weight: weights[tier] || 10 };
+  });
+
+  const totalWeight = weightedList.reduce((sum, item) => sum + item.weight, 0);
+  let randomNum = Math.random() * totalWeight;
+
+  for (const item of weightedList) {
+    if (randomNum < item.weight) return item.breed;
+    randomNum -= item.weight;
+  }
+  return ALL_BREEDS_DATABASE[0];
 }
 
 function generateStatsByRarity(tier) {
@@ -440,7 +459,7 @@ export function confirmBirthWithName() {
 
 function initCatLife(name) {
   playMeowSound();
-  const breed = ALL_BREEDS_DATABASE[Math.floor(Math.random() * ALL_BREEDS_DATABASE.length)];
+  const breed = getRandomBreedByRarity();
   const countryObj = RANDOM_COUNTRIES[Math.floor(Math.random() * RANDOM_COUNTRIES.length)];
 
   const maxLifeMonths = breed.isMix 
@@ -450,7 +469,6 @@ function initCatLife(name) {
   const rarityTier = getBreedRarityTier(breed);
   const stats = generateStatsByRarity(rarityTier);
 
-  // 重置新貓生預設值：起始 1 貓幣
   gameState.userCoins = 1;
   gameState.userSnacks = 5;
 
@@ -517,7 +535,7 @@ function initCatLife(name) {
   
   const lifeYears = Math.floor(gameState.currentCat.maxLifeMonths / 12);
   const stars = '⭐'.repeat(rarityTier);
-  document.getElementById('ui-cat-trait-text').innerText = `${gameState.currentCat.breed.name} · ${stars} (自然壽命預估約 ${lifeYears} 歲)`;
+  document.getElementById('ui-cat-trait-text').innerHTML = `${gameState.currentCat.breed.name}<br>${stars} (自然壽命預估約 ${lifeYears} 歲)`;
 
   updateStatusUI();
   startRoamingLoop(onCanvasClick, updateStatusUI, spawnFloatingFeedback);
@@ -596,7 +614,7 @@ export function continueSavedCat() {
   const lifeYears = Math.floor(gameState.currentCat.maxLifeMonths / 12);
   const tier = gameState.currentCat.rarityTier || getBreedRarityTier(gameState.currentCat.breed);
   const stars = '⭐'.repeat(tier);
-  document.getElementById('ui-cat-trait-text').innerText = `${gameState.currentCat.breed.name} · ${stars} (自然壽命預估約 ${lifeYears} 歲)`;
+  document.getElementById('ui-cat-trait-text').innerHTML = `${gameState.currentCat.breed.name}<br>${stars} (自然壽命預估約 ${lifeYears} 歲)`;
 
   updateStatusUI();
   startRoamingLoop(onCanvasClick, updateStatusUI, spawnFloatingFeedback);
@@ -628,11 +646,11 @@ export function updateContinueButtonState() {
 }
 
 // ==========================================
-// 4. 畫布點擊事件（抓蟲、清便、餵食、撫摸）
+// 4. 畫布點擊事件（抓蟲、清便、餵食、撫摸、梳毛）
 // ==========================================
 export function onCanvasClick(e) {
   if (gameState.isPaused) {
-    spawnFloatingFeedback(e.clientX, e.clientY, "⏸ 遊戲已暫停，無法進行任何互動！", true);
+    spawnFloatingFeedback(0, 0, "⏸ 遊戲已暫停，無法進行任何互動！", true);
     return;
   }
 
@@ -647,55 +665,48 @@ export function onCanvasClick(e) {
   const clickX = (e.clientX - rect.left) * (canvasW / rect.width);
   const clickY = (e.clientY - rect.top) * (canvasH / rect.height);
 
-  // 1. 抓蟲子機制
   if (gameState.activeBug) {
     const distToBug = Math.hypot(clickX - gameState.activeBug.x, clickY - gameState.activeBug.y);
     if (distToBug < 35) {
       gameState.activeBug = null;
       gameState.userCoins += 1;
-      gameState.currentCat.health = gameState.currentCat.health + 1; // 抵抗力可自由增長
+      gameState.currentCat.health = gameState.currentCat.health + 1;
       playClickSound();
-      spawnFloatingFeedback(e.clientX, e.clientY, "+1 貓幣 抵抗力+1 (抓到蟲子!) 🪲✨");
+      spawnFloatingFeedback(0, 0, "+1 貓幣 抵抗力+1 (抓到蟲子!) 🪲✨");
       updateStatusUI();
       return;
     }
   }
 
-  // 2. 清理地板便便
   for (let i = 0; i < (gameState.roomPoops || []).length; i++) {
     const p = gameState.roomPoops[i];
     if (Math.hypot(clickX - p.x, clickY - p.y) < 25) {
       gameState.roomPoops.splice(i, 1);
       gameState.userCoins += 2;
       playClickSound();
-      spawnFloatingFeedback(e.clientX, e.clientY, "+2 貓幣 清理乾淨！✨");
+      spawnFloatingFeedback(0, 0, "+2 貓幣 清理乾淨！✨");
       updateStatusUI();
       return;
     }
   }
 
-  // 3. 零食餵食（點到貓咪才餵食，使用 1 次扣 1 次）
   if (gameState.activeInteractionMode === 'snack') {
     const distToCat = Math.hypot(clickX - gameState.roamState.x, clickY - gameState.roamState.y);
     if (distToCat < (gameState.roamState.hitRadius || 40) + 25) {
       handleFeedSnackAction(e.clientX, e.clientY);
     } else {
-      spawnFloatingFeedback(e.clientX, e.clientY, "點偏了～沒餵到貓咪！", true);
+      spawnFloatingFeedback(0, 0, "點偏了～沒餵到貓咪！", true);
     }
     return;
   }
 
-  // 4. 逗貓棒模式
-  if (gameState.activeInteractionMode === 'toy') {
-    return;
-  }
+  if (gameState.activeInteractionMode === 'toy') return;
 
-  // 5. 撫摸互動（含閃避效果）
   const distToCat = Math.hypot(clickX - gameState.roamState.x, clickY - gameState.roamState.y);
   if (distToCat < (gameState.roamState.hitRadius || 40) + 20) {
     handleCatInteraction(e.clientX, e.clientY, clickX);
   } else {
-    spawnFloatingFeedback(e.clientX, e.clientY, "點偏了～沒摸到貓咪！", true);
+    spawnFloatingFeedback(0, 0, "點偏了～沒摸到貓咪！", true);
   }
 }
 
@@ -705,7 +716,6 @@ function handleFeedSnackAction(clientX, clientY) {
     return;
   }
 
-  // 使用 1 次扣 1 次
   gameState.userSnacks--;
   playPurrSound();
   playMeowSound();
@@ -715,15 +725,16 @@ function handleFeedSnackAction(clientX, clientY) {
   c.energy = Math.min(100, c.energy + 6);
 
   const now = Date.now();
-  if (now - (gameState.lastAffectionIncreaseTime || 0) >= 15000) {
+  // 將 15000 改為 10000
+  if (now - (gameState.lastAffectionIncreaseTime || 0) >= 10000) {
     gameState.lastAffectionIncreaseTime = now;
-    c.affection = (c.affection || 0) + 2; // 親密度無上限
-    spawnFloatingFeedback(clientX, clientY, "大口吃零食！飽足+10 心情+8 親密+2 🐟✨");
+    c.affection = (c.affection || 0) + 2;
+    spawnFloatingFeedback(0, 0, "大口吃零食！飽足+10 心情+8 親密+2 🐟✨");
   } else {
-    spawnFloatingFeedback(clientX, clientY, "大口吃零食！飽足+10 心情+8 活力+6 🐟✨");
+    spawnFloatingFeedback(0, 0, "大口吃零食！飽足+10 心情+8 活力+6 🐟✨");
   }
 
-  c.cute = (c.cute || 0) + 1; // 4大能力無上限
+  c.cute = (c.cute || 0) + 1;
   spawnFloatingHeart(clientX, clientY);
   document.getElementById('speech-text').innerText = `「哇～是最愛的小魚乾肉泥！謝謝奴才～呼嚕嚕💖」`;
   updateStatusUI();
@@ -732,6 +743,21 @@ function handleFeedSnackAction(clientX, clientY) {
 function handleCatInteraction(clientX, clientY, clickX) {
   const r = gameState.roamState;
   const c = gameState.currentCat;
+
+  if (gameState.activeInteractionMode === 'groom') {
+    const now = Date.now();
+    // 滿 10 秒才增加屬性並跳出提示文字
+    if (now - (gameState.lastGroomStatTime || 0) >= 10000) {
+      gameState.lastGroomStatTime = now;
+      c.charm = (c.charm || 0) + 1;
+      c.happiness = Math.min(100, c.happiness + 2);
+      playPurrSound();
+      spawnFloatingHeart(clientX, clientY);
+      spawnFloatingFeedback(0, 0, "幫貓咪梳毛！魅力+1 心情+2 ✨");
+      updateStatusUI();
+    }
+    return;
+  }
 
   let successRate = 0.55 + ((c.affection || 0) * 0.003) + ((c.happiness || 0) * 0.003);
   if (c.hunger < 25) successRate = 0.25;
@@ -747,12 +773,17 @@ function handleCatInteraction(clientX, clientY, clickX) {
       c.energy = Math.min(100, c.energy + bonusEnergy);
 
       const now = Date.now();
-      if (now - (gameState.lastAffectionIncreaseTime || 0) >= 15000) {
+      // 將 15000 改為 10000
+      if (now - (gameState.lastAffectionIncreaseTime || 0) >= 10000) {
         gameState.lastAffectionIncreaseTime = now;
-        c.affection = (c.affection || 0) + 1; // 親密無上限
-        spawnFloatingFeedback(clientX, clientY, `摸摸頭！親密+1 心情+4 活力+${bonusEnergy} ❤️`);
-      } else {
-        spawnFloatingFeedback(clientX, clientY, `摸摸頭舒服！心情+4 活力+${bonusEnergy} 🐾`);
+        c.affection = (c.affection || 0) + 1;
+        
+        if (Math.random() < 0.4) {
+          c.cute = (c.cute || 0) + 1;
+          spawnFloatingFeedback(0, 0, `摸摸頭！親密+1 可愛+1 心情+4 活力+${bonusEnergy} ❤️`);
+        } else {
+          spawnFloatingFeedback(0, 0, `摸摸頭！親密+1 心情+4 活力+${bonusEnergy} ❤️`);
+        }
       }
       
       gameState.petSuccessCounter = (gameState.petSuccessCounter || 0) + 1;
@@ -761,7 +792,6 @@ function handleCatInteraction(clientX, clientY, clickX) {
       }
     }
   } else {
-    // 閃避 Miss 效果：迅速溜走
     playMeowSound();
     gameState.consecutivePetCount = 0;
     r.isScurrying = true;
@@ -769,7 +799,7 @@ function handleCatInteraction(clientX, clientY, clickX) {
     r.vx = (r.x > clickX ? 1 : -1) * 3.5;
     r.vy = (Math.random() - 0.5) * 2;
     r.facing = r.vx > 0 ? 1 : -1;
-    spawnFloatingFeedback(clientX, clientY, "嗖～貓咪靈巧閃開了！(想摸摸不到)", true);
+    spawnFloatingFeedback(0, 0, "嗖～貓咪靈巧閃開了！(想摸摸不到)", true);
   }
 
   updateStatusUI();
@@ -796,15 +826,31 @@ export function spawnFloatingFeedback(x, y, text, isMiss = false) {
   el.className = 'floating-miss';
   if (!isMiss) el.style.color = '#27AE60';
   el.innerText = text;
-  el.style.left = `${x - 40}px`;
-  el.style.top = `${y - 20}px`;
+  
+  const canvas = document.getElementById('roaming-stage') || document.querySelector('#phase-game canvas');
+  
+  if (canvas) {
+    const rect = canvas.getBoundingClientRect();
+    const topY = rect.top + window.scrollY + 20;
+    const centerX = rect.left + window.scrollX + (rect.width / 2);
+    
+    el.style.width = '300px';
+    el.style.textAlign = 'center';
+    el.style.left = `${centerX - 150}px`; 
+    el.style.top = `${topY}px`;
+    el.style.textShadow = '0px 1px 3px rgba(255,255,255,0.9)';
+  } else {
+    el.style.left = `${x - 40}px`;
+    el.style.top = `${y - 20}px`;
+  }
+  
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 750);
 }
 
 export function setInteractionMode(mode) {
   gameState.activeInteractionMode = mode;
-  ['pet', 'toy', 'snack'].forEach(m => {
+  ['pet', 'toy', 'snack', 'groom'].forEach(m => {
     const btn = document.getElementById(`btn-mode-${m}`);
     if (btn) {
       btn.className = (m === mode)
@@ -815,32 +861,80 @@ export function setInteractionMode(mode) {
 }
 
 // ==========================================
-// 5. 照護日常按鈕
+// 5. 照護日常按鈕 (含 5s CD)
 // ==========================================
+// js/ui-handler.js
+
 export function feedDirectFood() {
-  if (gameState.isPaused) { showCustomAlert("暫停中", "遊戲處於暫停狀態，不能餵食喔！", "⏸"); return; }
+  if (gameState.isPaused) return;
+  const now = Date.now();
+  if (gameState.feedCdUntil && now < gameState.feedCdUntil) return;
+
+  gameState.feedCdUntil = now + 5000;
   playMeowSound();
-  gameState.currentCat.hunger = Math.min(100, gameState.currentCat.hunger + 15);
+  
+  // 改為 +5
+  gameState.currentCat.hunger = Math.min(100, gameState.currentCat.hunger + 5);
   gameState.currentCat.happiness = Math.min(100, gameState.currentCat.happiness + 2);
   
   if (gameState.currentCat.hunger > 0 && gameState.roamState.isStarving) {
     gameState.roamState.isStarving = false;
     document.getElementById('starve-overlay')?.classList.add('hidden');
   }
-  spawnFloatingFeedback(gameState.roamState.x, gameState.roamState.y - 15, "吃飽飽！飽足+15 心情+2 🍲");
+  spawnFloatingFeedback(0, 0, "吃飽飽！飽足+5 心情+2 🍲");
   updateStatusUI();
+
+  const btn = document.getElementById('btn-feed');
+  const txt = document.getElementById('feed-btn-text');
+  if (btn) btn.classList.add('opacity-50', 'pointer-events-none');
+  let remain = 5;
+  if (txt) txt.innerText = `冷卻中 (${remain}s)`;
+  
+  if (feedCdTimer) clearInterval(feedCdTimer);
+  feedCdTimer = setInterval(() => {
+    remain--;
+    if (remain > 0) {
+      if (txt) txt.innerText = `冷卻中 (${remain}s)`;
+    } else {
+      clearInterval(feedCdTimer);
+      if (txt) txt.innerText = `餵主食 (+5)`;
+      if (btn) btn.classList.remove('opacity-50', 'pointer-events-none');
+    }
+  }, 1000);
 }
 
 export function refillWater() {
-  if (gameState.isPaused) { showCustomAlert("暫停中", "遊戲處於暫停狀態，不能換水喔！", "⏸"); return; }
-  playPurrSound();
-  gameState.currentCat.water = Math.min(100, gameState.currentCat.water + 15);
-  gameState.currentCat.happiness = Math.min(100, gameState.currentCat.happiness + 1);
-  spawnFloatingFeedback(gameState.roamState.x, gameState.roamState.y - 15, "大口喝水！水分+15 心情+1 💧");
-  updateStatusUI();
-}
+  if (gameState.isPaused) return;
+  const now = Date.now();
+  if (gameState.waterCdUntil && now < gameState.waterCdUntil) return;
 
-// js/ui-handler.js (visitDoctor 函式內部)
+  gameState.waterCdUntil = now + 5000;
+  playPurrSound();
+  
+  // 改為 +5
+  gameState.currentCat.water = Math.min(100, gameState.currentCat.water + 5);
+  gameState.currentCat.happiness = Math.min(100, gameState.currentCat.happiness + 1);
+  spawnFloatingFeedback(0, 0, "大口喝水！水分+5 心情+1 💧");
+  updateStatusUI();
+
+  const btn = document.getElementById('btn-water');
+  const txt = document.getElementById('water-btn-text');
+  if (btn) btn.classList.add('opacity-50', 'pointer-events-none');
+  let remain = 5;
+  if (txt) txt.innerText = `冷卻中 (${remain}s)`;
+  
+  if (waterCdTimer) clearInterval(waterCdTimer);
+  waterCdTimer = setInterval(() => {
+    remain--;
+    if (remain > 0) {
+      if (txt) txt.innerText = `冷卻中 (${remain}s)`;
+    } else {
+      clearInterval(waterCdTimer);
+      if (txt) txt.innerText = `💧 換水補水 (+5)`;
+      if (btn) btn.classList.remove('opacity-50', 'pointer-events-none');
+    }
+  }, 1000);
+}
 
 export function visitDoctor() {
   if (gameState.isPaused) return;
@@ -850,10 +944,9 @@ export function visitDoctor() {
   gameState.doctorCdUntil = now + 5000;
   playPurrSound();
   
-  // 修改處：加成改為 +5，提示文字同步更新為 +5%
   gameState.currentCat.health = gameState.currentCat.health + 5;
   gameState.currentCat.happiness = Math.max(0, gameState.currentCat.happiness - 1);
-  spawnFloatingFeedback(gameState.roamState.x, gameState.roamState.y - 15, "細心體檢！抵抗力+5% 🩺");
+  spawnFloatingFeedback(0, 0, "細心體檢！抵抗力+5% 🩺");
   updateStatusUI();
 
   const btnText = document.getElementById('doctor-btn-text');
@@ -870,7 +963,6 @@ export function visitDoctor() {
       if (btnText) btnText.innerText = `冷卻中 (${remaining}s)`;
     } else {
       clearInterval(doctorCdTimer);
-      // 修改處：冷卻結束後的按鈕文字改為 (+5)
       if (btnText) btnText.innerText = `🩺 看醫生 (+5)`;
       if (btn) btn.classList.remove('opacity-50', 'pointer-events-none');
     }
@@ -881,7 +973,7 @@ function attemptCatPoop() {
   const goesToLitter = (Math.random() * 100) < (gameState.currentCat?.smarts || 10);
   if (goesToLitter) {
     gameState.userCoins += 3;
-    spawnFloatingFeedback(gameState.roamState.x, gameState.roamState.y, "+3 貓幣 (在貓砂盆如廁) 🚽✨");
+    spawnFloatingFeedback(0, 0, "+3 貓幣 (在貓砂盆如廁) 🚽✨");
   } else {
     gameState.roomPoops.push({
       x: Math.random() * 450 + 100,
@@ -962,6 +1054,12 @@ export function startGameTimeClock() {
 
     evaluateHealthAndIllness();
 
+    const totalDirt = (gameState.roomPoops || []).length + (gameState.activeBug ? 1 : 0);
+    if (totalDirt > 10) {
+      c.health = Math.max(0, c.health - 0.8);
+      spawnFloatingFeedback(0, 0, "環境太髒亂了！抵抗力極速下降 ⚠️", true);
+    }
+
     if (c.hunger <= 0) {
       gameState.roamState.isStarving = true;
       document.getElementById('starve-overlay')?.classList.remove('hidden');
@@ -970,9 +1068,7 @@ export function startGameTimeClock() {
       document.getElementById('starve-overlay')?.classList.add('hidden');
     }
 
-    if (Math.random() < 0.025) {
-      attemptCatPoop();
-    }
+    if (Math.random() < 0.025) attemptCatPoop();
 
     updateStatusUI();
   }, intervalMs);
@@ -1022,7 +1118,7 @@ function checkMonthlyPurrEvent() {
     playMeowSound();
     spawnFloatingHeart(gameState.roamState.x, gameState.roamState.y);
     showCustomAlert("咕嚕嚕嚕～🐾", `「${c.name} 靠在懷裡，發出了超級滿足的咕嚕嚕呼嚕聲～親密度提升！❤️」`, "💖");
-    c.affection = (c.affection || 0) + 2; // 親密無上限
+    c.affection = (c.affection || 0) + 2;
     c.happiness = Math.min(100, c.happiness + 5);
   }
 }
@@ -1049,7 +1145,7 @@ export function stepAgeTime(months) {
 }
 
 // ==========================================
-// 7. 生活隨機事件
+// 7. 生活隨機事件 (每次選擇完智力無條件 +1)
 // ==========================================
 export function triggerNextEvent() {
   const evt = EXPANDED_EVENTS[Math.floor(Math.random() * EXPANDED_EVENTS.length)];
@@ -1090,9 +1186,8 @@ export function resolveEventChoice(num) {
   const res = evt['r' + num];
   const c = gameState.currentCat;
 
-  // 4大能力值無上限直接累加
   if (res.cute) c.cute = (c.cute || 0) + res.cute;
-  if (res.smarts) c.smarts = (c.smarts || 0) + res.smarts;
+  c.smarts = (c.smarts || 0) + (res.smarts || 0) + 1;
   if (res.agility) c.agility = (c.agility || 0) + res.agility;
   if (res.charm) c.charm = (c.charm || 0) + res.charm;
   if (res.affection) c.affection = (c.affection || 0) + res.affection;
@@ -1123,7 +1218,7 @@ export function resolveEventChoice(num) {
 }
 
 // ==========================================
-// 8. 商店與離世邏輯（無彈窗直接購買）
+// 8. 商店與離世邏輯
 // ==========================================
 export function getSnackPrice() {
   if (!gameState.currentCat) return 1;
@@ -1262,7 +1357,7 @@ export async function submitCatFarewellAndFinish() {
 }
 
 // ==========================================
-// 9. 即時狀態 UI 刷新（4大能力值顯示真實數據無上限）
+// 9. 即時狀態 UI 刷新
 // ==========================================
 export function updateStatusUI() {
   const c = gameState.currentCat;
@@ -1297,7 +1392,6 @@ export function updateStatusUI() {
   document.getElementById('val-energy').innerText = `${Math.round(c.energy)}%`;
   document.getElementById('bar-energy').style.width = `${c.energy}%`;
 
-  // 4大能力值直接顯示數字（突破 100 無上限）
   document.getElementById('val-cute').innerText = c.cute;
   document.getElementById('val-smarts').innerText = c.smarts;
   document.getElementById('val-agility').innerText = c.agility;

@@ -572,15 +572,44 @@ export function startRoamingLoop(onCanvasClick, updateStatusUI, spawnFloatingFee
     drawLitterBox(ctx, w, h);
     drawPoops(ctx);
 
-    if (!gameState.activeBug && !gameState.isPaused && Math.random() < 0.002) {
-      gameState.activeBug = {
-        x: Math.random() * 400 + 120,
-        y: Math.random() * 140 + 170,
-        vx: (Math.random() - 0.5) * 1.5,
-        vy: (Math.random() - 0.5) * 1.2,
-        chasedTime: 0
-      };
+    // js/canvas-render.js (startRoamingLoop 函式內)
+
+// 1. 蟲子生成頻率調低至約 10 秒一次 (約 0.0016 概率)
+if (!gameState.activeBug && !gameState.isPaused && Math.random() < 0.0016) {
+  gameState.activeBug = {
+    x: Math.random() * 400 + 120,
+    y: Math.random() * 140 + 170,
+    vx: (Math.random() - 0.5) * 1.5,
+    vy: (Math.random() - 0.5) * 1.2,
+    spawnTime: Date.now() // 記錄出現時間
+  };
+}
+
+// 2. 蟲子不論移動或停止，只要出現滿 5 秒就被吃掉
+if (gameState.activeBug) {
+  const bug = gameState.activeBug;
+  
+  if (Date.now() - bug.spawnTime >= 5000) {
+    // 滿 5 秒自動吃掉消失
+    gameState.activeBug = null;
+    const c = gameState.currentCat;
+    if (c) {
+      c.health = Math.max(0, c.health - 1);
+      c.energy = Math.max(0, c.energy - 1);
+      spawnFloatingFeedback(r.x, r.y - 20, "蟲子被吃掉了！抵抗-1 活力-1 🤢", true);
+      updateStatusUI();
     }
+  } else {
+    // 5 秒內正常移動與繪製
+    if (!gameState.isPaused) {
+      bug.x += bug.vx;
+      bug.y += bug.vy;
+      if (bug.x < 110 || bug.x > w - 120) bug.vx *= -1;
+      if (bug.y < h * 0.45 + 15 || bug.y > h - 50) bug.vy *= -1;
+    }
+    drawBug(ctx);
+  }
+}
 
     if (gameState.activeBug) {
       const bug = gameState.activeBug;
@@ -654,7 +683,7 @@ export function startRoamingLoop(onCanvasClick, updateStatusUI, spawnFloatingFee
             if (c) {
               const now = Date.now();
               // 【修改處】逗貓棒觸發能力值增加冷卻時間改為 15 秒 (15000 ms)
-              if (!gameState.lastToyStatTime || (now - gameState.lastToyStatTime >= 15000)) {
+              if (!gameState.lastToyStatTime || (now - gameState.lastToyStatTime >= 10000)) {
                 gameState.lastToyStatTime = now;
                 c.happiness = Math.min(100, c.happiness + 3);
                 c.agility = (c.agility || 0) + 1; // 靈巧無上限
