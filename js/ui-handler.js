@@ -471,6 +471,7 @@ function initCatLife(name) {
 
   gameState.userCoins = 1;
   gameState.userSnacks = 5;
+  gameState.snackPrice = 1; // 零食初始 1 元
 
   gameState.currentCat = {
     name: name,
@@ -553,6 +554,7 @@ export function saveCurrentCatProgress() {
     cat: gameState.currentCat,
     coins: gameState.userCoins,
     snacks: gameState.userSnacks,
+    snackPrice: gameState.snackPrice || 1,
     poops: gameState.roomPoops,
     inventory: gameState.shopInventory
   };
@@ -581,6 +583,7 @@ export function continueSavedCat() {
   gameState.currentCat = saveData.cat;
   gameState.userCoins = saveData.coins !== undefined ? saveData.coins : 1;
   gameState.userSnacks = saveData.snacks !== undefined ? saveData.snacks : 5;
+  gameState.snackPrice = saveData.snackPrice || 1;
   gameState.roomPoops = saveData.poops || [];
   gameState.shopInventory = saveData.inventory || { autoWater: false, autoFeeder: false, autoCleaner: false };
 
@@ -670,7 +673,8 @@ export function onCanvasClick(e) {
     if (distToBug < 35) {
       gameState.activeBug = null;
       gameState.userCoins += 1;
-      gameState.currentCat.health = gameState.currentCat.health + 1;
+      // 抵抗力上限鎖定 110%
+      gameState.currentCat.health = Math.min(110, gameState.currentCat.health + 1);
       playClickSound();
       spawnFloatingFeedback(0, 0, "+1 貓幣 抵抗力+1 (抓到蟲子!) 🪲✨");
       updateStatusUI();
@@ -725,7 +729,6 @@ function handleFeedSnackAction(clientX, clientY) {
   c.energy = Math.min(100, c.energy + 6);
 
   const now = Date.now();
-  // 將 15000 改為 10000
   if (now - (gameState.lastAffectionIncreaseTime || 0) >= 10000) {
     gameState.lastAffectionIncreaseTime = now;
     c.affection = (c.affection || 0) + 2;
@@ -746,7 +749,6 @@ function handleCatInteraction(clientX, clientY, clickX) {
 
   if (gameState.activeInteractionMode === 'groom') {
     const now = Date.now();
-    // 滿 10 秒才增加屬性並跳出提示文字
     if (now - (gameState.lastGroomStatTime || 0) >= 10000) {
       gameState.lastGroomStatTime = now;
       c.charm = (c.charm || 0) + 1;
@@ -773,7 +775,6 @@ function handleCatInteraction(clientX, clientY, clickX) {
       c.energy = Math.min(100, c.energy + bonusEnergy);
 
       const now = Date.now();
-      // 將 15000 改為 10000
       if (now - (gameState.lastAffectionIncreaseTime || 0) >= 10000) {
         gameState.lastAffectionIncreaseTime = now;
         c.affection = (c.affection || 0) + 1;
@@ -861,10 +862,8 @@ export function setInteractionMode(mode) {
 }
 
 // ==========================================
-// 5. 照護日常按鈕 (含 5s CD)
+// 5. 照護日常按鈕 (+5 飽足/水分，5s CD)
 // ==========================================
-// js/ui-handler.js
-
 export function feedDirectFood() {
   if (gameState.isPaused) return;
   const now = Date.now();
@@ -872,8 +871,6 @@ export function feedDirectFood() {
 
   gameState.feedCdUntil = now + 5000;
   playMeowSound();
-  
-  // 改為 +5
   gameState.currentCat.hunger = Math.min(100, gameState.currentCat.hunger + 5);
   gameState.currentCat.happiness = Math.min(100, gameState.currentCat.happiness + 2);
   
@@ -910,8 +907,6 @@ export function refillWater() {
 
   gameState.waterCdUntil = now + 5000;
   playPurrSound();
-  
-  // 改為 +5
   gameState.currentCat.water = Math.min(100, gameState.currentCat.water + 5);
   gameState.currentCat.happiness = Math.min(100, gameState.currentCat.happiness + 1);
   spawnFloatingFeedback(0, 0, "大口喝水！水分+5 心情+1 💧");
@@ -944,7 +939,8 @@ export function visitDoctor() {
   gameState.doctorCdUntil = now + 5000;
   playPurrSound();
   
-  gameState.currentCat.health = gameState.currentCat.health + 5;
+  // 抵抗力上限鎖定 110%
+  gameState.currentCat.health = Math.min(110, gameState.currentCat.health + 5);
   gameState.currentCat.happiness = Math.max(0, gameState.currentCat.happiness - 1);
   spawnFloatingFeedback(0, 0, "細心體檢！抵抗力+5% 🩺");
   updateStatusUI();
@@ -1030,9 +1026,11 @@ export function startGameTimeClock() {
     const currentFloorMonth = Math.floor(c.ageMonths);
     const prevFloorMonth = Math.floor(prevAgeMonths);
 
+    // 每滿 3 個月觸發事件與零食價格降 1 元
     if (currentFloorMonth > prevFloorMonth) {
       checkMonthlyPurrEvent();
       if (currentFloorMonth % 3 === 0 && currentFloorMonth > 0) {
+        gameState.snackPrice = Math.max(1, (gameState.snackPrice || 1) - 1);
         triggerNextEvent();
       }
     }
@@ -1082,7 +1080,7 @@ function evaluateHealthAndIllness() {
     if (c.hunger < 90 || c.happiness < 90 || c.water < 90 || c.energy < 90) {
       c.health = Math.max(0, c.health - 0.6);
     } else {
-      c.health = c.health + 0.1;
+      c.health = Math.min(110, c.health + 0.1);
     }
   } else {
     let stressDeficit = 0;
@@ -1095,7 +1093,7 @@ function evaluateHealthAndIllness() {
     if (stressDeficit > 0) {
       c.health = Math.max(0, c.health - stressDeficit);
     } else {
-      c.health = c.health + 0.1;
+      c.health = Math.min(110, c.health + 0.1);
     }
   }
 
@@ -1123,13 +1121,10 @@ function checkMonthlyPurrEvent() {
   }
 }
 
-// js/ui-handler.js (約 630 行附近)
-
 export function stepAgeTime(months) {
   if (gameState.isPaused) { showCustomAlert("暫停中", "目前遊戲已暫停，無法推進時間！", "⏸"); return; }
   const c = gameState.currentCat;
   
-  // 記錄推進前的月份與推進後的月份
   const prevFloorMonth = Math.floor(c.ageMonths);
   c.ageMonths += months;
   const currentFloorMonth = Math.floor(c.ageMonths);
@@ -1147,10 +1142,10 @@ export function stepAgeTime(months) {
   checkMonthlyPurrEvent();
   evaluateHealthAndIllness();
 
-  // 修改處：只有當時間推進並跨越滿 3 個月的倍數 (3, 6, 9, 12...) 時才觸發事件
   if (currentFloorMonth > prevFloorMonth) {
     for (let m = prevFloorMonth + 1; m <= currentFloorMonth; m++) {
       if (m > 0 && m % 3 === 0) {
+        gameState.snackPrice = Math.max(1, (gameState.snackPrice || 1) - 1);
         triggerNextEvent();
         break;
       }
@@ -1161,7 +1156,7 @@ export function stepAgeTime(months) {
 }
 
 // ==========================================
-// 7. 生活隨機事件 (每次選擇完智力無條件 +1)
+// 7. 生活隨機事件
 // ==========================================
 export function triggerNextEvent() {
   const evt = EXPANDED_EVENTS[Math.floor(Math.random() * EXPANDED_EVENTS.length)];
@@ -1203,7 +1198,7 @@ export function resolveEventChoice(num) {
   const c = gameState.currentCat;
 
   if (res.cute) c.cute = (c.cute || 0) + res.cute;
-  c.smarts = (c.smarts || 0) + (res.smarts || 0) + 1;
+  c.smarts = (c.smarts || 0) + (res.smarts || 0) + 1; // 智力無條件 +1
   if (res.agility) c.agility = (c.agility || 0) + res.agility;
   if (res.charm) c.charm = (c.charm || 0) + res.charm;
   if (res.affection) c.affection = (c.affection || 0) + res.affection;
@@ -1213,7 +1208,7 @@ export function resolveEventChoice(num) {
   if (res.hunger) c.hunger = Math.max(0, Math.min(100, c.hunger + res.hunger));
   if (res.water) c.water = Math.max(0, Math.min(100, c.water + res.water));
   if (res.energy) c.energy = Math.max(0, Math.min(100, c.energy + res.energy));
-  if (res.health) c.health = c.health + res.health;
+  if (res.health) c.health = Math.min(110, c.health + res.health);
 
   const box = document.getElementById('event-choices-box');
   if (box) {
@@ -1237,9 +1232,7 @@ export function resolveEventChoice(num) {
 // 8. 商店與離世邏輯
 // ==========================================
 export function getSnackPrice() {
-  if (!gameState.currentCat) return 1;
-  const years = Math.floor(gameState.currentCat.ageMonths / 12);
-  return Math.max(1, years - 1);
+  return gameState.snackPrice || 1;
 }
 
 export function openShopModal() {
@@ -1263,6 +1256,10 @@ export function buySnackItem(amount) {
   if (gameState.userCoins >= totalCost) {
     gameState.userCoins -= totalCost;
     gameState.userSnacks += amount;
+    
+    // 每購買一次漲價 1 元，最高 10 元
+    gameState.snackPrice = Math.min(10, (gameState.snackPrice || 1) + 1);
+
     playPurrSound();
 
     document.getElementById('shop-coin-display').innerText = gameState.userCoins;
@@ -1277,7 +1274,7 @@ export function buySnackItem(amount) {
         parent.classList.remove('bg-rose-600');
         parent.classList.add('bg-emerald-600');
         setTimeout(() => {
-          btn.innerText = `${singlePrice} 貓幣`;
+          btn.innerText = `${getSnackPrice()} 貓幣`;
           parent.classList.remove('bg-emerald-600');
           parent.classList.add('bg-rose-600');
         }, 800);
@@ -1394,7 +1391,7 @@ export function updateStatusUI() {
   document.getElementById('ui-stage-badge').innerText = `${c.stage}階段`;
 
   document.getElementById('val-health').innerText = `${Math.round(c.health)}%`;
-  document.getElementById('bar-health').style.width = `${Math.min(100, c.health)}%`;
+  document.getElementById('bar-health').style.width = `${Math.min(100, (c.health / 110) * 100)}%`;
 
   document.getElementById('val-hunger').innerText = `${Math.round(c.hunger)}%`;
   document.getElementById('bar-hunger').style.width = `${c.hunger}%`;
