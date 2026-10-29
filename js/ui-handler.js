@@ -1123,10 +1123,16 @@ function checkMonthlyPurrEvent() {
   }
 }
 
+// js/ui-handler.js (約 630 行附近)
+
 export function stepAgeTime(months) {
   if (gameState.isPaused) { showCustomAlert("暫停中", "目前遊戲已暫停，無法推進時間！", "⏸"); return; }
   const c = gameState.currentCat;
+  
+  // 記錄推進前的月份與推進後的月份
+  const prevFloorMonth = Math.floor(c.ageMonths);
   c.ageMonths += months;
+  const currentFloorMonth = Math.floor(c.ageMonths);
   
   c.hunger = Math.max(0, c.hunger - 15);
   c.water = Math.max(0, c.water - 15);
@@ -1140,7 +1146,17 @@ export function stepAgeTime(months) {
 
   checkMonthlyPurrEvent();
   evaluateHealthAndIllness();
-  triggerNextEvent();
+
+  // 修改處：只有當時間推進並跨越滿 3 個月的倍數 (3, 6, 9, 12...) 時才觸發事件
+  if (currentFloorMonth > prevFloorMonth) {
+    for (let m = prevFloorMonth + 1; m <= currentFloorMonth; m++) {
+      if (m > 0 && m % 3 === 0) {
+        triggerNextEvent();
+        break;
+      }
+    }
+  }
+
   updateStatusUI();
 }
 
