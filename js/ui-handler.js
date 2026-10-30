@@ -852,6 +852,7 @@ export function setTimeSpeed(spd) {
 export function startGameTimeClock() {
   if (gameLoopInterval) clearInterval(gameLoopInterval);
   const intervalMs = 1000 / (gameState.timeSpeedMultiplier || 1);
+
   gameLoopInterval = setInterval(() => {
     const c = gameState.currentCat;
     if (!c || gameState.isPaused) return;
@@ -860,10 +861,13 @@ export function startGameTimeClock() {
     c.ageMonths += (1 / 30);
     const currentFloorMonth = Math.floor(c.ageMonths);
 
+    // 每月隨機撒嬌 & 每季刷新事件
     if (currentFloorMonth > prevFloorMonth) {
       if (Math.random() < ((c.affection || 0) / 1000)) {
-        playPurrSound(); spawnFloatingHeart(gameState.roamState.x, gameState.roamState.y);
-        c.affection = (c.affection || 0) + 2; c.happiness = Math.min(100, c.happiness + 5);
+        playPurrSound(); 
+        spawnFloatingHeart(gameState.roamState.x, gameState.roamState.y);
+        c.affection = (c.affection || 0) + 2; 
+        c.happiness = Math.min(100, c.happiness + 5);
       }
       if (currentFloorMonth % 3 === 0 && currentFloorMonth > 0) {
         gameState.snackPrice = Math.max(1, (gameState.snackPrice || 1) - 1);
@@ -871,14 +875,36 @@ export function startGameTimeClock() {
       }
     }
 
-    c.hunger = Math.max(0, c.hunger - 0.2); c.water = Math.max(0, c.water - 0.2); c.energy = Math.max(0, c.energy - 0.15);
-    if (c.hunger < 30 || c.water < 30 || (gameState.roomPoops || []).length > 2) c.happiness = Math.max(0, c.happiness - 0.25);
-    if (gameState.shopInventory?.autoWater && c.water < 70) c.water = Math.min(100, c.water + 1);
-    if (gameState.shopInventory?.autoFeeder && c.hunger < 70) c.hunger = Math.min(100, c.hunger + 1);
+    // 1. 基礎自然消耗
+    c.hunger = Math.max(0, c.hunger - 0.2); 
+    c.water = Math.max(0, c.water - 0.2); 
+    c.energy = Math.max(0, c.energy - 0.15);
+    if (c.hunger < 30 || c.water < 30 || (gameState.roomPoops || []).length > 2) {
+      c.happiness = Math.max(0, c.happiness - 0.25);
+    }
 
+    // 2. 自動設備補給（調整為每秒 +0.5%）
+    if (gameState.shopInventory?.autoWater && c.water < 70) {
+      c.water = Math.min(100, c.water + 0.5);
+    }
+    if (gameState.shopInventory?.autoFeeder && c.hunger < 70) {
+      c.hunger = Math.min(100, c.hunger + 0.5);
+    }
+
+    // 3. 檢查「飽足 / 心情 / 水分 / 體力」為 0% 的項目數量
+    let zeroStatsCount = 0;
+    if (c.hunger <= 0) zeroStatsCount++;
+    if (c.happiness <= 0) zeroStatsCount++;
+    if (c.water <= 0) zeroStatsCount++;
+    if (c.energy <= 0) zeroStatsCount++;
+
+    // 4. 抵抗力自然衰退與恢復
     if (c.ageMonths < 12) {
-      if (c.hunger < 90 || c.happiness < 90 || c.water < 90 || c.energy < 90) c.health = Math.max(0, c.health - 0.6);
-      else c.health = Math.min(110, c.health + 0.1);
+      if (c.hunger < 90 || c.happiness < 90 || c.water < 90 || c.energy < 90) {
+        c.health = Math.max(0, c.health - 0.6);
+      } else {
+        c.health = Math.min(110, c.health + 0.1);
+      }
     } else {
       let stressDeficit = 0;
       if (c.hunger < 35) stressDeficit += (35 - c.hunger) * 0.08;
@@ -886,20 +912,70 @@ export function startGameTimeClock() {
       if (c.happiness < 30) stressDeficit += (30 - c.happiness) * 0.06;
       if (c.energy < 20) stressDeficit += (20 - c.energy) * 0.05;
       if ((gameState.roomPoops || []).length > 2) stressDeficit += gameState.roomPoops.length * 0.3;
+      
       if (stressDeficit > 0) c.health = Math.max(0, c.health - stressDeficit);
       else c.health = Math.min(110, c.health + 0.1);
     }
 
-    if (c.health < 40) document.getElementById('sick-overlay')?.classList.remove('hidden');
-    else document.getElementById('sick-overlay')?.classList.add('hidden');
-    if (c.health <= 0 || c.ageMonths >= c.maxLifeMonths) triggerCatPassingModal();
+    // 【懲罰實裝】任 2 項（或以上）數值為 0%，抵抗力大幅度降低（額外重扣 1.8% / 秒）
+    if (zeroStatsCount >= 2) {
+      c.health = Math.max(0, c.health - 1.8);
+      if (Math.random() < 0.25) {
+        spawnFloatingFeedback(0, 0, "⚠️ 身體極度虛弱！抵抗力急遽崩跌！", true);
+      }
+    }
 
-    if ((gameState.roomPoops || []).length + (gameState.activeBug ? 1 : 0) > 10) c.health = Math.max(0, c.health - 0.8);
-    if (c.hunger <= 0) { gameState.roamState.isStarving = true; document.getElementById('starve-overlay')?.classList.remove('hidden'); } 
-    else { gameState.roamState.isStarving = false; document.getElementById('starve-overlay')?.classList.add('hidden'); }
+    // 5. 生病遮罩提示 (低於 30% 呈現病危狀態)
+    if (c.health < 30) {
+      document.getElementById('sick-overlay')?.classList.remove('hidden');
+    } else {
+      document.getElementById('sick-overlay')?.classList.add('hidden');
+    }
 
+    // 房間髒亂懲罰
+    if ((gameState.roomPoops || []).length + (gameState.activeBug ? 1 : 0) > 10) {
+      c.health = Math.max(0, c.health - 0.8);
+    }
+
+    // 飢餓趴地判定
+    if (c.hunger <= 0) { 
+      gameState.roamState.isStarving = true; 
+      document.getElementById('starve-overlay')?.classList.remove('hidden'); 
+    } else { 
+      gameState.roamState.isStarving = false; 
+      document.getElementById('starve-overlay')?.classList.add('hidden'); 
+    }
+
+    // 6. 【核心調整】抵抗力階梯式死亡檢測
+    let isDead = false;
+
+    if (c.health <= 0 || c.ageMonths >= c.maxLifeMonths) {
+      // 0% 抵抗力或壽命終了：直接死亡
+      isDead = true;
+    } else if (c.health < 30) {
+      // 階梯式猝死機率判定 (每秒檢測)
+      let deathChance = 0.01; // 20% ~ 30%：每秒 1% 機率猝死
+      if (c.health < 10) {
+        deathChance = 0.08;   // 0% ~ 10%：每秒 8% 機率猝死
+      } else if (c.health < 20) {
+        deathChance = 0.035;  // 10% ~ 20%：每秒 3.5% 機率猝死
+      }
+
+      if (Math.random() < deathChance) {
+        isDead = true;
+      }
+    }
+
+    if (isDead) {
+      triggerCatPassingModal();
+      return;
+    }
+
+    // 7. 隨機排便
     if (Math.random() < 0.025) attemptCatPoop();
-    updateStatusUI(); autoSaveCurrentCatProgress();
+
+    updateStatusUI(); 
+    autoSaveCurrentCatProgress();
   }, intervalMs);
 }
 
