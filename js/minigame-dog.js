@@ -14,7 +14,7 @@ const CANVAS_WIDTH = 1050;
 const CANVAS_HEIGHT = 700;
 const TILE_SIZE = 40;
 
-// 貓咪速度為 4.2，小狗極限速度封頂於 4.3（僅比貓快 0.1）
+// 貓咪常規速度為 4.2，小狗極限速度上限鎖定於 4.3 (僅比貓快一點點)
 const CAT_BASE_SPEED = 4.2;
 const MAX_DOG_SPEED = 4.3;
 
@@ -28,6 +28,9 @@ let activeItems = [];
 // 貓咪移動向量 (用於路徑預判)
 let catVx = 0;
 let catVy = 0;
+
+// 搖桿向量 (x: -1~1, y: -1~1, active: boolean)
+let joystickVec = { x: 0, y: 0, active: false };
 
 // 定時器旗標 (每 10 秒)
 let lastDogSpawnSecond = 0;
@@ -128,7 +131,7 @@ function renderDogSelectUI() {
 
   const count = selectedCatOrder.length;
   if (count >= 3 && count <= 10) {
-    // 3隻=1.0x, 4隻=1.2x, 5隻=1.4x ... 每隻增加 0.2
+    // 3隻=1.0x, 4隻=1.2x, 5隻=1.4x ... 每增加 1 隻 +0.2x
     const mult = (1.0 + (count - 3) * 0.2).toFixed(1);
     const leaderCat = window.tempDogCats[selectedCatOrder[0]];
     btnStart.disabled = false;
@@ -149,7 +152,6 @@ window.startDogGameFromSelect = function() {
   
   catImages = [];
   const selectedArr = selectedCatOrder.map(idx => window.tempDogCats[idx]);
-  // 3隻=1.0x, 4隻=1.2x, 5隻=1.4x ...
   scoreMultiplier = 1.0 + (selectedArr.length - 3) * 0.2;
 
   selectedArr.forEach(c => {
@@ -160,18 +162,20 @@ window.startDogGameFromSelect = function() {
 
   document.getElementById('modal-minigame-dog-play')?.classList.remove('hidden');
   document.getElementById('dog-overlay')?.classList.remove('hidden');
+  document.getElementById('dog-controls-wrapper')?.classList.add('hidden'); // 準備頁面先隱藏搖桿
   document.getElementById('dog-multiplier').innerText = scoreMultiplier.toFixed(1);
   
   canvas = document.getElementById('dog-canvas');
   ctx = canvas.getContext('2d');
   ctx.imageSmoothingEnabled = false;
 
-  setupVirtualControls();
+  setupJoystickControls();
 };
 
 export function closeMinigameDog() {
   isPlaying = false;
   if (gameLoopId) cancelAnimationFrame(gameLoopId);
+  document.getElementById('dog-controls-wrapper')?.classList.add('hidden');
   document.getElementById('modal-minigame-dog-play')?.classList.add('hidden');
 }
 
@@ -180,6 +184,8 @@ export function closeMinigameDog() {
 // ==========================================
 window.startDogGameLoop = function() {
   document.getElementById('dog-overlay')?.classList.add('hidden');
+  // 正式開始遊戲，顯示圓形手把搖桿
+  document.getElementById('dog-controls-wrapper')?.classList.remove('hidden');
   
   startTime = Date.now();
   survivalSeconds = 0;
@@ -192,6 +198,7 @@ window.startDogGameLoop = function() {
   floatingText = null;
   catVx = 0;
   catVy = 0;
+  joystickVec = { x: 0, y: 0, active: false };
 
   document.getElementById('dog-score').innerText = 0;
   document.getElementById('dog-time').innerText = 0;
@@ -238,7 +245,7 @@ function update() {
   document.getElementById('dog-score').innerText = totalScore;
   document.getElementById('dog-time').innerText = survivalSeconds;
 
-  // --- 小狗生成：每 10 秒增加 1 隻狗 ---
+  // 小狗生成：每 10 秒增加 1 隻
   if (survivalSeconds > 0 && survivalSeconds % 10 === 0 && lastDogSpawnSecond !== survivalSeconds) {
     lastDogSpawnSecond = survivalSeconds;
 
@@ -246,7 +253,7 @@ function update() {
     const multiplier = dogs.length === 1 ? 1.2 : 1.3;
     let nextSpeed = prevDog ? Number((prevDog.speed * multiplier).toFixed(2)) : 2.5;
     
-    // 速度持續增加，但上限嚴格鎖定在 4.3 (只比貓咪 4.2 快一點點)
+    // 速度持續增加，但極限速度鎖定於 4.3 (只比貓咪 4.2 快一點點)
     const calculatedSpeed = Math.min(MAX_DOG_SPEED, nextSpeed);
 
     const spawnPoints = [
@@ -261,7 +268,7 @@ function update() {
       x: pt.x,
       y: pt.y,
       speed: calculatedSpeed,
-      freezeUntil: now + 2000,
+      freezeUntil: now + 2000, // 新出生的狗原地發呆 2 秒
       isSmart: true,
       aiState: 'chase',
       stateUntil: now + 2500,
@@ -271,7 +278,7 @@ function update() {
     spawnFloatingBanner("有新的狗狗加入");
   }
 
-  // --- 道具生成：每 10 秒隨機產生 1 個道具 ---
+  // 道具生成：每 10 秒隨機產生 1 個道具
   if (survivalSeconds > 0 && survivalSeconds % 10 === 0 && lastItemSpawnSecond !== survivalSeconds) {
     lastItemSpawnSecond = survivalSeconds;
     const itemType = Math.floor(Math.random() * 3) + 1;
@@ -282,23 +289,30 @@ function update() {
     });
   }
 
-  // 1. 領頭貓移動與向量計算 (常規速度 4.2)
+  // 1. 領頭貓移動 (優先讀取圓形手把搖桿輸入，輔助讀取鍵盤)
   let baseCatSpeed = CAT_BASE_SPEED;
   if (now < buffCatSpeedUntil) baseCatSpeed = 6.5;
 
   let moved = false;
   let newX = cats[0].x;
   let newY = cats[0].y;
-  let vx = 0;
-  let vy = 0;
 
-  if (keys.up) { newY -= baseCatSpeed; vy -= 1; moved = true; }
-  if (keys.down) { newY += baseCatSpeed; vy += 1; moved = true; }
-  if (keys.left) { newX -= baseCatSpeed; vx -= 1; moved = true; }
-  if (keys.right) { newX += baseCatSpeed; vx += 1; moved = true; }
-
-  catVx = catVx * 0.7 + vx * 0.3;
-  catVy = catVy * 0.7 + vy * 0.3;
+  if (joystickVec.active) {
+    newX += joystickVec.x * baseCatSpeed;
+    newY += joystickVec.y * baseCatSpeed;
+    catVx = joystickVec.x;
+    catVy = joystickVec.y;
+    moved = true;
+  } else {
+    let vx = 0;
+    let vy = 0;
+    if (keys.up) { newY -= baseCatSpeed; vy -= 1; moved = true; }
+    if (keys.down) { newY += baseCatSpeed; vy += 1; moved = true; }
+    if (keys.left) { newX -= baseCatSpeed; vx -= 1; moved = true; }
+    if (keys.right) { newX += baseCatSpeed; vx += 1; moved = true; }
+    catVx = catVx * 0.7 + vx * 0.3;
+    catVy = catVy * 0.7 + vy * 0.3;
+  }
 
   if (newX < 0) newX = 0;
   if (newX > CANVAS_WIDTH - TILE_SIZE) newX = CANVAS_WIDTH - TILE_SIZE;
@@ -313,7 +327,7 @@ function update() {
     if (pathHistory.length > 250) pathHistory.shift();
   }
 
-  // 2. 後方貓咪跟隨
+  // 2. 後方貓咪循跡跟隨
   const spacing = 12;
   for (let i = 1; i < cats.length; i++) {
     const targetIdx = pathHistory.length - (i * spacing);
@@ -323,7 +337,7 @@ function update() {
     }
   }
 
-  // 3. 道具檢測
+  // 3. 道具檢測與拾取
   for (let i = activeItems.length - 1; i >= 0; i--) {
     const item = activeItems[i];
     let picked = false;
@@ -339,7 +353,7 @@ function update() {
     }
   }
 
-  // 4. 小狗行為決策 (預測路徑 / 4角落埋伏 / 停頓0.3秒)
+  // 4. 小狗行為決策 (預測路徑 / 4角落埋伏 / 停頓 0.3 秒)
   const isAllDogsFrozen = now < debuffDogFreezeUntil;
   const anyDogAmbushing = dogs.some(d => d.aiState === 'ambush');
 
@@ -352,14 +366,14 @@ function update() {
     if (dog.isSmart && now > dog.stateUntil) {
       const rand = Math.random();
 
-      // 場上有 2 隻狗以上時，機率性派 1 隻前往 4 個角落埋伏
+      // 場上有 2 隻狗以上時，機率性指派 1 隻前往 4 個角落埋伏
       if (dogs.length >= 2 && !anyDogAmbushing && rand < 0.3) {
         dog.aiState = 'ambush';
         dog.stateUntil = now + 3500;
         const corner = CORNERS[Math.floor(Math.random() * CORNERS.length)];
         dog.targetPos = { x: corner.x, y: corner.y };
       }
-      // 停頓 0.3 秒 (300ms)
+      // 停頓 0.3 秒 (300ms) 觀察
       else if (rand < 0.48) {
         dog.aiState = 'pause';
         dog.stateUntil = now + 300;
@@ -436,7 +450,7 @@ function spawnFloatingBanner(msg) {
 }
 
 // ==========================================
-// 3. 畫布渲染 (純粹 Icon)
+// 3. 畫布渲染 (純粹 Icon 顯示，無外框底圈)
 // ==========================================
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -478,7 +492,7 @@ function draw() {
       ctx.drawImage(catImages[i].img, cx - 12, cy - 2, 64, 40);
     }
 
-    // 隊長頭頂王冠標記
+    // 隊長標記
     if (i === 0) {
       ctx.font = "18px sans-serif";
       ctx.textAlign = 'center';
@@ -486,7 +500,7 @@ function draw() {
     }
   }
 
-  // 小狗：純粹 Icon
+  // 小狗：純粹 Icon (40px)
   dogs.forEach(dog => {
     ctx.font = "40px sans-serif";
     ctx.textAlign = 'center';
@@ -517,6 +531,8 @@ function draw() {
 // ==========================================
 function gameOver(reason) {
   isPlaying = false;
+  // 遊戲結束，隱藏圓形搖桿
+  document.getElementById('dog-controls-wrapper')?.classList.add('hidden');
 
   const leaderCat = catImages[0]?.catData;
   if (leaderCat) {
@@ -533,7 +549,69 @@ function gameOver(reason) {
   document.getElementById('dog-status-desc').innerText = `${reason}\n\n隊長貓咪: ${leaderCat ? leaderCat.name : '未知'}\n存活時間: ${survivalSeconds} 秒 (${catImages.length} 隻同行)\n倍率加成: ${scoreMultiplier.toFixed(1)}x\n最終得分: ${totalScore} 分 (已計入隊長紀錄)！`;
 }
 
-// 鍵盤監聽
+// ==========================================
+// 圓形手把搖桿 (Virtual Joystick) 監聽邏輯
+// ==========================================
+function setupJoystickControls() {
+  const base = document.getElementById('dog-joystick-base');
+  const knob = document.getElementById('dog-joystick-knob');
+  if (!base || !knob) return;
+
+  const handlePointer = (e) => {
+    const rect = base.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const dx = e.clientX - centerX;
+    const dy = e.clientY - centerY;
+    
+    const maxR = (rect.width / 2) - 15;
+    const dist = Math.hypot(dx, dy);
+    const clampedDist = Math.min(maxR, dist);
+    const angle = Math.atan2(dy, dx);
+    
+    const knobX = Math.cos(angle) * clampedDist;
+    const knobY = Math.sin(angle) * clampedDist;
+    
+    knob.style.transform = `translate(${knobX}px, ${knobY}px)`;
+    
+    const power = clampedDist / maxR;
+    joystickVec = {
+      x: Math.cos(angle) * power,
+      y: Math.sin(angle) * power,
+      active: true
+    };
+  };
+
+  const resetJoystick = () => {
+    knob.style.transform = 'translate(0px, 0px)';
+    joystickVec = { x: 0, y: 0, active: false };
+  };
+
+  base.onpointerdown = (e) => {
+    e.preventDefault();
+    try { base.setPointerCapture(e.pointerId); } catch(err) {}
+    handlePointer(e);
+  };
+
+  base.onpointermove = (e) => {
+    if (joystickVec.active) {
+      e.preventDefault();
+      handlePointer(e);
+    }
+  };
+
+  base.onpointerup = (e) => {
+    e.preventDefault();
+    try { base.releasePointerCapture(e.pointerId); } catch(err) {}
+    resetJoystick();
+  };
+
+  base.onpointercancel = () => {
+    resetJoystick();
+  };
+}
+
+// 鍵盤輔助監聽
 window.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') keys.up = true;
   if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') keys.down = true;
@@ -547,25 +625,6 @@ window.addEventListener('keyup', (e) => {
   if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') keys.left = false;
   if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') keys.right = false;
 });
-
-function setupVirtualControls() {
-  const btnUp = document.getElementById('btn-dog-up');
-  const btnDown = document.getElementById('btn-dog-down');
-  const btnLeft = document.getElementById('btn-dog-left');
-  const btnRight = document.getElementById('btn-dog-right');
-  
-  const addCtrl = (btn, k) => {
-    if (!btn) return;
-    btn.onpointerdown = (e) => { e.preventDefault(); keys[k] = true; };
-    btn.onpointerup = (e) => { e.preventDefault(); keys[k] = false; };
-    btn.onpointerleave = (e) => { e.preventDefault(); keys[k] = false; };
-  };
-  
-  addCtrl(btnUp, 'up');
-  addCtrl(btnDown, 'down');
-  addCtrl(btnLeft, 'left');
-  addCtrl(btnRight, 'right');
-}
 
 if (typeof window !== 'undefined') {
   Object.assign(window, {
