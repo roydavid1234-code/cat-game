@@ -49,6 +49,30 @@ function generateStatsByRarity(tier) {
   return { tier, cute: roll(), smarts: roll(), agility: roll(), charm: roll(), affection: roll() };
 }
 
+// ==========================================
+// 確保進行中的主角貓隨時常駐於記憶體中
+// ==========================================
+export function ensureCurrentCatLoaded() {
+  if (!gameState.currentCat) {
+    const raw = localStorage.getItem('saved_living_cat');
+    if (raw) {
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && parsed.cat) {
+          gameState.currentCat = parsed.cat;
+          gameState.userCoins = parsed.coins !== undefined ? parsed.coins : 1;
+          gameState.userSnacks = parsed.snacks !== undefined ? parsed.snacks : 5;
+          gameState.snackPrice = parsed.snackPrice || 1;
+          gameState.roomPoops = parsed.poops || [];
+          gameState.shopInventory = parsed.inventory || { autoWater: false, autoFeeder: false, autoCleaner: false };
+        }
+      } catch (e) {
+        console.error("讀取存檔失敗", e);
+      }
+    }
+  }
+}
+
 export function renderTopBreedsBars() {
   const container = document.getElementById('top-breeds-bars');
   if (!container) return;
@@ -154,15 +178,12 @@ export function renderHomeRankTab(statKey = 'growth') {
   if (!container) return;
   container.innerHTML = '';
 
-  // 1. 取得玩家名下擁有的所有貓咪 ID
   const myOwnedIds = JSON.parse(localStorage.getItem('my_owned_cat_ids') || '[]');
   const dogScoresMap = JSON.parse(localStorage.getItem('cat_dog_scores') || '{}');
   const crossyScoresMap = JSON.parse(localStorage.getItem('cat_crossy_scores') || '{}');
 
-  // 2. 合併星空貓群
   const allPool = [...(gameState.myStarCats || [])];
 
-  // 3. 抓取當前生活中的主角貓（無論在記憶體中還是在本機存檔中）
   let livingCat = gameState.currentCat;
   if (!livingCat) {
     try {
@@ -194,7 +215,6 @@ export function renderHomeRankTab(statKey = 'growth') {
     });
   }
 
-  // 4. 校正所有貓咪的分數（讀取獨立持久化快取）
   allPool.forEach(cat => {
     const key = cat.catId || cat.id || cat.name;
     const localDog = dogScoresMap[key] || (cat.name ? dogScoresMap[cat.name] : 0) || 0;
@@ -204,14 +224,12 @@ export function renderHomeRankTab(statKey = 'growth') {
     cat.crossyScore = Math.max(Number(cat.crossyScore) || 0, Number(cat.crossy_score) || 0, localCrossy);
   });
 
-  // 5. 排序
   if (statKey === 'growth') {
     allPool.sort((a, b) => getCatGrowthMonths(b) - getCatGrowthMonths(a));
   } else {
     allPool.sort((a, b) => (Number(b[statKey]) || 0) - (Number(a[statKey]) || 0));
   }
 
-  // 6. 規則套用：若是「貓咪過街」或「小狗抓貓」，自己的貓咪只顯示 1 隻最高分的代表！
   let displayPool = allPool;
   if (statKey === 'crossyScore' || statKey === 'dogScore') {
     let seenMyCat = false;
@@ -220,11 +238,11 @@ export function renderHomeRankTab(statKey = 'growth') {
       if (isMine) {
         if (!seenMyCat) {
           seenMyCat = true;
-          return true; // 僅保留第 1 隻（即最高分的那一隻）
+          return true;
         }
-        return false; // 過濾掉後續較低分的自己貓咪
+        return false;
       }
-      return true; // 其他貓咪正常上榜
+      return true;
     });
   }
 
@@ -305,7 +323,7 @@ export function renderCatPlanetSection() {
   pagContainer.innerHTML = '';
 
   const myOwnedIds = JSON.parse(localStorage.getItem('my_owned_cat_ids') || '[]');
-  const allCats = (gameState.myStarCats || []).map(c => ({ ...c, isMine: myOwnedIds.includes(c.catId) }));
+  const allCats = (gameState.myStarCats || []).map(c => ({ ...c, isMine: myOwnedIds.includes(c.catId) || myOwnedIds.includes(c.id) }));
   const sourceCats = gameState.currentPlanetFilter === 'mine' ? allCats.filter(c => c.isMine) : allCats;
   const totalCats = sourceCats.length;
 
@@ -370,16 +388,13 @@ export function showNostalgicQuote(catName) {
   showCustomAlert(`來自 ${catName} 的星空信件 💌`, `「${q}」`, "✨");
 }
 
-// ==========================================
-// 我的愛貓回憶錄渲染與開啟
-// ==========================================
 export function renderMyMemories() {
   const container = document.getElementById('my-memories-container');
   if (!container) return;
   container.innerHTML = '';
 
   const myOwnedIds = JSON.parse(localStorage.getItem('my_owned_cat_ids') || '[]');
-  const myCats = (gameState.myStarCats || []).filter(c => myOwnedIds.includes(c.catId));
+  const myCats = (gameState.myStarCats || []).filter(c => myOwnedIds.includes(c.catId) || myOwnedIds.includes(c.id));
 
   if (myCats.length === 0) {
     container.innerHTML = `
@@ -403,7 +418,7 @@ export function renderMyMemories() {
                 <span>${c.name}</span>
                 <span class="text-[11px] font-normal text-[#7F7B75]">(${c.breed})</span>
               </div>
-              <div class="text-[11px] text-[#9E2A2B] font-bold mt-0.5">成長年齡：${c.lifespan || '未知'}</div>
+              <div class="text-[11px] text-[#9E2A2B] font-bold mt-0.5">年齡：${c.lifespan || '未知'}</div>
               <div class="text-[10px] text-[#7F7B75]">守護主人：${c.owner || '貓奴'}</div>
             </div>
           </div>
@@ -568,12 +583,12 @@ export function continueSavedCat() {
   startGameTimeClock();
   triggerNextEvent();
 
-  gameState.isPaused = true;
+  gameState.isPaused = false;
   const btnText = document.getElementById('pause-btn-text');
   const btn = document.getElementById('btn-toggle-pause');
-  if (btnText) btnText.innerText = "▶ 繼續";
-  if (btn) btn.className = "px-2 py-1 rounded-lg border border-emerald-600 bg-emerald-600 text-white font-bold flex items-center gap-1 transition shadow-sm text-[11px]";
-  if (document.getElementById('ui-state-pill')) document.getElementById('ui-state-pill').innerText = "⏸ 已暫停中 (無法互動)";
+  if (btnText) btnText.innerText = "⏸ 暫停";
+  if (btn) btn.className = "px-2 py-1 rounded-lg border border-[#9E2A2B] bg-[#9E2A2B] text-white font-bold flex items-center gap-1 transition text-[11px]";
+  if (document.getElementById('ui-state-pill')) document.getElementById('ui-state-pill').innerText = "🐾 正在自由散步...";
 }
 
 export function updateContinueButtonState() {
@@ -1011,9 +1026,6 @@ export function updateStatusUI() {
   if (document.getElementById('sub-snack-qty')) document.getElementById('sub-snack-qty').innerText = `(剩 ${gameState.userSnacks} 個)`;
 }
 
-// ==========================================
-// 遊戲大廳 (Mini-game Hub)
-// ==========================================
 export function openMinigameHub(mode = 'star') {
   window.currentHubMode = mode;
   if (mode === 'living' && !gameState.isPaused) {
@@ -1039,6 +1051,6 @@ export function hubLaunchDog() {
 if (typeof window !== 'undefined') {
   Object.assign(window, {
     renderTopBreedsBars, renderAllBreedsModal, openBreedModal, closeBreedModal, switchHomeRankTab, toggleRankExpand, renderHomeRankTab, switchPlanetFilter, renderCatPlanetSection, gotoPlanetPage, showNostalgicQuote, openMyMemoryModal, closeMyMemoryModal, showCustomAlert, closeCustomAlert, openNameModal, closeNameModal, randomizeCatName, confirmBirthWithName, autoSaveCurrentCatProgress, saveCurrentCatProgress, continueSavedCat, updateContinueButtonState, onCanvasClick, setInteractionMode, feedDirectFood, refillWater, visitDoctor, togglePlayPause, setTimeSpeed, stepAgeTime, triggerNextEvent, resolveEventChoice, openShopModal, closeShopModal, buySnackItem, buyShopItem, submitCatFarewellAndFinish, updateStatusUI, toggleAudio, getSnackPrice,
-    openMinigameHub, closeMinigameHub, hubLaunchCrossy, hubLaunchDog, renderMyMemories
+    openMinigameHub, closeMinigameHub, hubLaunchCrossy, hubLaunchDog, renderMyMemories, ensureCurrentCatLoaded
   });
 }
