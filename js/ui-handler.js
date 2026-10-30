@@ -67,7 +67,7 @@ export function renderTopBreedsBars() {
   if (tPass) tPass.innerText = (gameState.myStarCats || []).length;
 
   if (sortedBreeds.length === 0) {
-    container.innerHTML = `<div class="py-6 text-center text-[#7F7B75] text-xs">目前尚無誕生紀錄，為第一隻貓咪命名開啟貓生吧！🐾</div>`;
+    container.innerHTML = `<div class="py-6 text-center text-[#7F7B75] text-xs font-jp">目前尚無誕生紀錄，為第一隻貓咪命名開啟貓生吧！🐾</div>`;
     return;
   }
 
@@ -75,15 +75,15 @@ export function renderTopBreedsBars() {
     const rate = ((b.count / birthed.length) * 100).toFixed(1);
     container.innerHTML += `
       <div>
-        <div class="flex justify-between items-center mb-1">
+        <div class="flex justify-between items-center mb-1 text-[11px]">
           <span class="font-bold flex items-center gap-2">
             <span class="w-4 text-center text-[#9E2A2B] font-serif">${i+1}</span>
-            <span>${b.name}</span>
-            <span class="text-[10px] text-[#7F7B75] bg-[#F7F5F0] px-1.5 py-0.5 rounded border border-[#E5E0D8]">誕生 ${b.count} 隻</span>
+            <span class="text-[#2C2C2C]">${b.name}</span>
+            <span class="text-[9px] text-[#7F7B75] bg-[#FAF8F5] px-1.5 py-0.5 rounded border border-[#E5E0D8]">誕生 ${b.count} 隻</span>
           </span>
           <span class="font-serif font-bold text-[#7F7B75]">${rate}%</span>
         </div>
-        <div class="w-full h-2 bg-[#F7F5F0] rounded-full overflow-hidden border border-[#E5E0D8]">
+        <div class="w-full h-1.5 bg-[#FAF8F5] rounded-full overflow-hidden border border-[#E5E0D8]">
           <div class="h-full bg-[#9E2A2B] rounded-full" style="width: ${rate}%;"></div>
         </div>
       </div>
@@ -163,7 +163,7 @@ export function renderHomeRankTab(statKey = 'growth') {
   }
 
   if (allPool.length === 0) {
-    container.innerHTML = `<div class="col-span-full py-8 text-center text-[#7F7B75] text-xs">目前貓星球尚未有回到星空的貓咪守護神 ✨</div>`;
+    container.innerHTML = `<div class="col-span-full py-8 text-center text-[#7F7B75] text-xs font-serif leading-relaxed">🐾 目前貓星球尚未有回到星空的貓咪守護神 ✨</div>`;
     return;
   }
 
@@ -183,16 +183,16 @@ export function renderHomeRankTab(statKey = 'growth') {
     else if (statKey === 'dogScore') statLabel = `🐕生存:${item.dogScore || 0}秒`;
 
     container.innerHTML += `
-      <div class="p-3 bg-[#FAF8F5] border border-[#E5E0D8] rounded-2xl flex items-center justify-between gap-2">
+      <div class="p-3 bg-[#FAF8F5] border border-[#E5E0D8] rounded-2xl flex items-center justify-between gap-2 shadow-sm hover:border-[#9E2A2B] transition">
         <div class="flex items-center gap-2.5 overflow-hidden">
           <span class="font-serif font-black text-base w-5 text-center text-[#9E2A2B] flex-shrink-0">${medal}</span>
-          <img src="${catThumb}" class="w-10 h-10 rounded-lg bg-white border border-[#E5E0D8] p-1 flex-shrink-0">
+          <img src="${catThumb}" class="w-10 h-10 rounded-xl bg-white border border-[#E5E0D8] p-1 flex-shrink-0">
           <div class="truncate">
-            <div class="font-bold text-[#2C2C2C] truncate">${item.name} <span class="text-[11px] font-normal text-[#7F7B75]">(${item.breed})</span></div>
-            <div class="text-[10px] text-[#7F7B75] mt-0.5 leading-tight">主人：${item.owner}<br>成長：${item.lifespan}</div>
+            <div class="font-bold text-[#2C2C2C] truncate text-xs sm:text-sm">${item.name} <span class="text-[10px] font-normal text-[#7F7B75]">(${item.breed})</span></div>
+            <div class="text-[9px] sm:text-[10px] text-[#7F7B75] mt-0.5 leading-tight">主人：${item.owner}<br>歷程：${item.lifespan}</div>
           </div>
         </div>
-        <div class="bg-white px-2 py-1 rounded-lg border border-[#E5E0D8] text-[10px] font-bold text-[#9E2A2B] whitespace-nowrap flex-shrink-0 shadow-sm">
+        <div class="bg-white px-2 py-1.5 rounded-lg border border-[#E5E0D8] text-[10px] sm:text-[11px] font-bold text-[#9E2A2B] whitespace-nowrap flex-shrink-0 shadow-sm">
           ${statLabel}
         </div>
       </div>
@@ -231,7 +231,7 @@ export function renderCatPlanetSection() {
   const totalCats = sourceCats.length;
 
   if (totalCats === 0) {
-    container.innerHTML = `<div class="col-span-full py-10 text-center text-indigo-300/70 font-serif text-xs">🐾 目前貓星球還沒有登陸的毛孩子...</div>`;
+    container.innerHTML = `<div class="col-span-full py-10 text-center text-indigo-300/70 font-serif text-xs leading-relaxed">🐾 目前貓星球還沒有登陸的毛孩子...</div>`;
     return;
   }
 
@@ -248,7 +248,7 @@ export function renderCatPlanetSection() {
     const clickAttr = c.isMine ? `onclick="showNostalgicQuote('${c.name}')" class="relative cursor-pointer group"` : `class="relative cursor-default opacity-80"`;
     let scoreHtml = '';
     if (c.crossyScore && c.crossyScore > 0) scoreHtml += `<div class="text-[9px] bg-amber-500/20 text-amber-200 px-1.5 py-0.5 rounded-full mt-1 inline-block border border-amber-500/40">🎮過街: ${c.crossyScore}</div> `;
-    if (c.dogScore && c.dogScore > 0) scoreHtml += `<div class="text-[9px] bg-amber-500/20 text-amber-200 px-1.5 py-0.5 rounded-full mt-1 inline-block border border-amber-500/40">🐕小狗: ${c.dogScore}秒</div>`;
+    if (c.dogScore && c.dogScore > 0) scoreHtml += `<div class="text-[9px] bg-amber-500/20 text-amber-200 px-1.5 py-0.5 rounded-full mt-1 inline-block border border-amber-500/40">🐕小狗: ${c.dogScore}分</div>`;
 
     container.innerHTML += `
       <div class="bg-white/10 backdrop-blur-md border border-indigo-400/20 rounded-2xl p-4 text-left shadow-lg flex flex-col justify-between">
@@ -256,7 +256,7 @@ export function renderCatPlanetSection() {
           <div class="flex items-center gap-3 mb-2">
             <div ${clickAttr}>
               <img src="${thumb}" class="w-12 h-12 rounded-xl bg-white/20 border border-white/30 p-1 flex-shrink-0 ${c.isMine ? 'group-hover:scale-105 transition transform' : ''}">
-              ${c.isMine ? '<span class="absolute -bottom-1 -right-1 text-[8px] bg-amber-500 text-white rounded-full px-1 font-bold">我的</span>' : ''}
+              ${c.isMine ? '<span class="absolute -bottom-1 -right-1 text-[8px] bg-amber-500 text-white rounded-full px-1 font-bold shadow-sm">我的</span>' : ''}
             </div>
             <div>
               <h5 class="font-serif font-bold text-sm text-indigo-100 flex items-center gap-1.5">
@@ -268,7 +268,7 @@ export function renderCatPlanetSection() {
             </div>
           </div>
         </div>
-        <div class="p-2.5 rounded-xl bg-white/5 border border-indigo-400/20 text-xs text-indigo-100 font-serif italic">
+        <div class="p-2.5 rounded-xl bg-white/5 border border-indigo-400/20 text-xs text-indigo-100 font-serif italic mt-1">
           " ${c.farewellMsg || '謝謝你曾來到我的生命裡。'} "
         </div>
       </div>
@@ -276,11 +276,11 @@ export function renderCatPlanetSection() {
   });
 
   if (totalPages > 1) {
-    let pagHtml = `<button onclick="gotoPlanetPage(${gameState.planetCurrentPage - 1})" class="px-3 py-1 rounded-lg bg-indigo-900/60 hover:bg-indigo-700 text-white disabled:opacity-30" ${gameState.planetCurrentPage === 1 ? 'disabled' : ''}>上一頁</button>`;
+    let pagHtml = `<button onclick="gotoPlanetPage(${gameState.planetCurrentPage - 1})" class="px-3 py-1 rounded-lg bg-indigo-900/60 hover:bg-indigo-700 text-white disabled:opacity-30 transition" ${gameState.planetCurrentPage === 1 ? 'disabled' : ''}>上一頁</button>`;
     for (let i = 1; i <= totalPages; i++) {
-      pagHtml += `<button onclick="gotoPlanetPage(${i})" class="px-2.5 py-1 rounded-lg ${i === gameState.planetCurrentPage ? 'bg-indigo-600 text-white font-bold' : 'bg-indigo-900/40 text-indigo-300 hover:text-white'}">第 ${i} 頁</button>`;
+      pagHtml += `<button onclick="gotoPlanetPage(${i})" class="px-2.5 py-1 rounded-lg transition ${i === gameState.planetCurrentPage ? 'bg-indigo-600 text-white font-bold' : 'bg-indigo-900/40 text-indigo-300 hover:text-white'}">第 ${i} 頁</button>`;
     }
-    pagHtml += `<button onclick="gotoPlanetPage(${gameState.planetCurrentPage + 1})" class="px-3 py-1 rounded-lg bg-indigo-900/60 hover:bg-indigo-700 text-white disabled:opacity-30" ${gameState.planetCurrentPage === totalPages ? 'disabled' : ''}>下一頁</button>`;
+    pagHtml += `<button onclick="gotoPlanetPage(${gameState.planetCurrentPage + 1})" class="px-3 py-1 rounded-lg bg-indigo-900/60 hover:bg-indigo-700 text-white disabled:opacity-30 transition" ${gameState.planetCurrentPage === totalPages ? 'disabled' : ''}>下一頁</button>`;
     pagContainer.innerHTML = pagHtml;
   }
 }
@@ -290,8 +290,65 @@ export function showNostalgicQuote(catName) {
   const q = NOSTALGIC_STAR_QUOTES[Math.floor(Math.random() * NOSTALGIC_STAR_QUOTES.length)];
   showCustomAlert(`來自 ${catName} 的星空信件 💌`, `「${q}」`, "✨");
 }
-export function openMyMemoryModal() { document.getElementById('modal-my-memories')?.classList.remove('hidden'); }
-export function closeMyMemoryModal() { document.getElementById('modal-my-memories')?.classList.add('hidden'); }
+
+// ==========================================
+// 我的愛貓回憶錄渲染與開啟
+// ==========================================
+export function renderMyMemories() {
+  const container = document.getElementById('my-memories-container');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const myOwnedIds = JSON.parse(localStorage.getItem('my_owned_cat_ids') || '[]');
+  const myCats = (gameState.myStarCats || []).filter(c => myOwnedIds.includes(c.catId));
+
+  if (myCats.length === 0) {
+    container.innerHTML = `
+      <div class="col-span-full py-12 text-center text-[#7F7B75] text-xs font-serif leading-relaxed">
+        🌸 目前尚未有已前往貓星球的專屬愛貓記憶。<br>
+        在貓咪的一生圓滿後，牠們的足跡與給你的悄悄話都會珍藏在這裡 🐾
+      </div>
+    `;
+    return;
+  }
+
+  myCats.forEach(c => {
+    const thumb = c.img || generateBreedThumbnail(c.color || '#E67E22', c.stripe || '#D35400');
+    container.innerHTML += `
+      <div class="bg-[#FAF8F5] border border-[#E5E0D8] rounded-2xl p-3.5 flex flex-col justify-between shadow-sm hover:border-[#9E2A2B] transition">
+        <div>
+          <div class="flex items-center gap-3 mb-2.5">
+            <img src="${thumb}" class="w-12 h-12 rounded-xl bg-white border border-[#E5E0D8] p-1 flex-shrink-0">
+            <div>
+              <div class="font-bold text-sm text-[#2C2C2C] flex items-center gap-1.5">
+                <span>${c.name}</span>
+                <span class="text-[11px] font-normal text-[#7F7B75]">(${c.breed})</span>
+              </div>
+              <div class="text-[11px] text-[#9E2A2B] font-bold mt-0.5">成長歷程：${c.lifespan || '未知'}</div>
+              <div class="text-[10px] text-[#7F7B75]">守護主人：${c.owner || '貓奴'}</div>
+            </div>
+          </div>
+          <div class="p-2.5 rounded-xl bg-white border border-[#E5E0D8] text-xs text-[#55524D] font-serif italic mb-2">
+            " ${c.farewellMsg || '謝謝你曾來到我的生命裡。'} "
+          </div>
+        </div>
+        <div class="flex items-center justify-between text-[11px] text-[#7F7B75] pt-2 border-t border-[#E5E0D8]/60">
+          <span class="font-bold">🎮 過街: ${c.crossyScore || 0}分 ｜ 🐕 抓貓: ${c.dogScore || 0}分</span>
+          <button onclick="showNostalgicQuote('${c.name}')" class="text-[#9E2A2B] hover:underline font-bold">聽星空信件 ✨</button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+export function openMyMemoryModal() {
+  renderMyMemories();
+  document.getElementById('modal-my-memories')?.classList.remove('hidden');
+}
+
+export function closeMyMemoryModal() {
+  document.getElementById('modal-my-memories')?.classList.add('hidden');
+}
 
 export function showCustomAlert(title, msg, icon = "🐾") {
   const t = document.getElementById('custom-alert-title');
@@ -436,8 +493,8 @@ export function continueSavedCat() {
   const btnText = document.getElementById('pause-btn-text');
   const btn = document.getElementById('btn-toggle-pause');
   if (btnText) btnText.innerText = "▶ 繼續";
-  if (btn) btn.className = "px-2.5 py-1 rounded-lg border border-emerald-600 bg-emerald-600 text-white font-bold flex items-center gap-1 transition shadow-sm text-[11px]";
-  document.getElementById('ui-state-pill').innerText = "⏸ 已暫停中 (請手動點擊繼續)";
+  if (btn) btn.className = "px-2 py-1 rounded-lg border border-emerald-600 bg-emerald-600 text-white font-bold flex items-center gap-1 transition shadow-sm text-[11px]";
+  if (document.getElementById('ui-state-pill')) document.getElementById('ui-state-pill').innerText = "⏸ 已暫停中 (無法互動)";
 }
 
 export function updateContinueButtonState() {
@@ -655,11 +712,11 @@ export function togglePlayPause() {
   const btn = document.getElementById('btn-toggle-pause');
   if (gameState.isPaused) {
     if (btnText) btnText.innerText = "▶ 繼續";
-    if (btn) btn.className = "px-2.5 py-1 rounded-lg border border-emerald-600 bg-emerald-600 text-white font-bold flex items-center gap-1 transition shadow-sm text-[11px]";
+    if (btn) btn.className = "px-2 py-1 rounded-lg border border-emerald-600 bg-emerald-600 text-white font-bold flex items-center gap-1 transition shadow-sm text-[11px]";
     if (document.getElementById('ui-state-pill')) document.getElementById('ui-state-pill').innerText = "⏸ 已暫停中 (無法互動)";
   } else {
     if (btnText) btnText.innerText = "⏸ 暫停";
-    if (btn) btn.className = "px-2.5 py-1 rounded-lg border border-[#9E2A2B] bg-[#9E2A2B] text-white font-bold flex items-center gap-1 transition text-[11px]";
+    if (btn) btn.className = "px-2 py-1 rounded-lg border border-[#9E2A2B] bg-[#9E2A2B] text-white font-bold flex items-center gap-1 transition text-[11px]";
     if (document.getElementById('ui-state-pill')) document.getElementById('ui-state-pill').innerText = "🐾 正在自由散步...";
   }
 }
@@ -844,7 +901,7 @@ export async function submitCatFarewellAndFinish() {
   
   const record = {
     catId: localCatId, name: c.name, owner: c.owner || gameState.playerName, lifespan: `${Math.floor(c.ageMonths/12)}歲 ${Math.floor(c.ageMonths%12)}個月`,
-    totalMonths: c.ageMonths, breed: c.breed.name, cute: c.cute, smarts: c.smarts, agility: c.agility, charm: c.charm, affection: c.affection, crossyScore: c.crossyScore || 0,
+    totalMonths: c.ageMonths, breed: c.breed.name, cute: c.cute, smarts: c.smarts, agility: c.agility, charm: c.charm, affection: c.affection, crossyScore: c.crossyScore || 0, dogScore: c.dogScore || 0,
     color: c.breed.color, stripe: c.breed.stripe, img: generateBreedThumbnail(c.breed.color, c.breed.stripe), farewellMsg: document.getElementById('cat-final-farewell-input')?.value.trim() || "謝謝你帶給我的所有溫柔陪伴。"
   };
   
@@ -880,7 +937,6 @@ export function updateStatusUI() {
 // ==========================================
 export function openMinigameHub(mode = 'star') {
   window.currentHubMode = mode;
-  // 若在養成階段開啟，自動暫停主遊戲
   if (mode === 'living' && !gameState.isPaused) {
     togglePlayPause();
   }
@@ -893,11 +949,7 @@ export function closeMinigameHub() {
 
 export function hubLaunchCrossy() {
   closeMinigameHub();
-  if (window.currentHubMode === 'living') {
-    if (window.startMinigameWithCurrentCat) window.startMinigameWithCurrentCat();
-  } else {
-    if (window.openMinigameSelect) window.openMinigameSelect();
-  }
+  if (window.openMinigameSelect) window.openMinigameSelect();
 }
 
 export function hubLaunchDog() {
@@ -908,6 +960,6 @@ export function hubLaunchDog() {
 if (typeof window !== 'undefined') {
   Object.assign(window, {
     renderTopBreedsBars, renderAllBreedsModal, openBreedModal, closeBreedModal, switchHomeRankTab, toggleRankExpand, renderHomeRankTab, switchPlanetFilter, renderCatPlanetSection, gotoPlanetPage, showNostalgicQuote, openMyMemoryModal, closeMyMemoryModal, showCustomAlert, closeCustomAlert, openNameModal, closeNameModal, randomizeCatName, confirmBirthWithName, autoSaveCurrentCatProgress, saveCurrentCatProgress, continueSavedCat, updateContinueButtonState, onCanvasClick, setInteractionMode, feedDirectFood, refillWater, visitDoctor, togglePlayPause, setTimeSpeed, stepAgeTime, triggerNextEvent, resolveEventChoice, openShopModal, closeShopModal, buySnackItem, buyShopItem, submitCatFarewellAndFinish, updateStatusUI, toggleAudio, getSnackPrice,
-    openMinigameHub, closeMinigameHub, hubLaunchCrossy, hubLaunchDog // 加入大廳方法
+    openMinigameHub, closeMinigameHub, hubLaunchCrossy, hubLaunchDog, renderMyMemories
   });
 }
