@@ -341,22 +341,47 @@ window.addEventListener('keydown', (e) => {
 
 function gameOver(reason) {
   isPlaying = false;
-  document.getElementById('crossy-controls-wrapper')?.classList.add('hidden'); // 【新增：結束時隱藏】
-  
+  document.getElementById('crossy-controls-wrapper')?.classList.add('hidden');
+
   if (activePlayingCatObj) {
-    if (score > (activePlayingCatObj.crossyScore || 0)) {
+    const prevBest = activePlayingCatObj.crossyScore || 0;
+    if (score > prevBest) {
       activePlayingCatObj.crossyScore = score;
-      if (isLivingCatMode) {
-        if (window.autoSaveCurrentCatProgress) autoSaveCurrentCatProgress();
+
+      // 1. 持久化寫入獨立快取表 (cat_crossy_scores)
+      const crossyScoresMap = JSON.parse(localStorage.getItem('cat_crossy_scores') || '{}');
+      const catKey = activePlayingCatObj.catId || activePlayingCatObj.id || activePlayingCatObj.name;
+      crossyScoresMap[catKey] = score;
+      if (activePlayingCatObj.name) crossyScoresMap[activePlayingCatObj.name] = score;
+      localStorage.setItem('cat_crossy_scores', JSON.stringify(crossyScoresMap));
+
+      // 2. 同步回活著的貓咪或星空貓
+      if (isLivingCatMode && gameState.currentCat) {
+        gameState.currentCat.crossyScore = score;
+        if (window.autoSaveCurrentCatProgress) window.autoSaveCurrentCatProgress();
       } else {
-        if (window.saveMyStarCats) saveMyStarCats();
+        const starCat = (gameState.myStarCats || []).find(sc => 
+          (sc.catId && sc.catId === activePlayingCatObj.catId) || 
+          (sc.id && sc.id === activePlayingCatObj.catId) || 
+          (sc.name && sc.name === activePlayingCatObj.name)
+        );
+        if (starCat) starCat.crossyScore = score;
+        if (window.saveMyStarCats) window.saveMyStarCats();
       }
     }
   }
 
+  // 即時重新渲染首頁排行榜與回憶錄
+  if (window.renderHomeRankTab) {
+    window.renderHomeRankTab(gameState.currentRankTab || 'crossyScore');
+  }
+  if (window.renderMyMemories) {
+    window.renderMyMemories();
+  }
+
   document.getElementById('crossy-overlay')?.classList.remove('hidden');
   document.getElementById('crossy-status-title').innerText = "GAME OVER";
-  document.getElementById('crossy-status-desc').innerText = `${reason}\n\n出戰貓咪: ${activePlayingCatObj ? activePlayingCatObj.name : '未知'}\n最終得分: ${score}`;
+  document.getElementById('crossy-status-desc').innerText = `${reason}\n\n出戰貓咪: ${activePlayingCatObj ? activePlayingCatObj.name : '未知'}\n最終得分: ${score} 分！`;
 }
 
 if (typeof window !== 'undefined') {

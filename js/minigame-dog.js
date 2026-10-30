@@ -1,6 +1,6 @@
 import { gameState, saveMyStarCats } from './game-state.js';
 import { generateBreedThumbnail } from './data.js';
-import { showCustomAlert } from './ui-handler.js';
+import { showCustomAlert, autoSaveCurrentCatProgress, renderHomeRankTab, renderMyMemories } from './ui-handler.js';
 
 let canvas, ctx;
 let gameLoopId;
@@ -14,35 +14,27 @@ const CANVAS_WIDTH = 1050;
 const CANVAS_HEIGHT = 700;
 const TILE_SIZE = 40;
 
-// 貓咪常規速度為 4.2，小狗極限速度上限鎖定於 4.3 (僅比貓快一點點)
 const CAT_BASE_SPEED = 4.2;
 const MAX_DOG_SPEED = 4.3;
 
-// 遊戲實體
 let dogs = [];
 let cats = [];
 let pathHistory = [];
 let catImages = [];
 let activeItems = [];
 
-// 貓咪移動向量 (用於路徑預判)
 let catVx = 0;
 let catVy = 0;
-
-// 搖桿向量 (x: -1~1, y: -1~1, active: boolean)
 let joystickVec = { x: 0, y: 0, active: false };
 
-// 定時器旗標 (每 10 秒)
 let lastDogSpawnSecond = 0;
 let lastItemSpawnSecond = 0;
 
-// 道具效果時間戳
 let buffCatSpeedUntil = 0;
 let debuffDogSlowUntil = 0;
 let debuffDogFreezeUntil = 0;
 let floatingText = null;
 
-// 四個角落埋伏點座標
 const CORNERS = [
   { x: 90, y: 90 },
   { x: CANVAS_WIDTH - 90, y: 90 },
@@ -54,19 +46,52 @@ window.tempDogCats = [];
 let selectedCatOrder = [];
 let keys = { up: false, down: false, left: false, right: false };
 
-// ==========================================
-// 1. 選擇貓咪組隊 (3 ~ 10 隻，第 1 隻為隊長)
-// ==========================================
+let activeLeaderCat = null; // 【新增】用來精準儲存真正的隊長
+
 export function openMinigameDogSelect() {
   const myOwnedIds = JSON.parse(localStorage.getItem('my_owned_cat_ids') || '[]');
-  const myCats = (gameState.myStarCats || []).filter(c => myOwnedIds.includes(c.catId));
+  const dogScoresMap = JSON.parse(localStorage.getItem('cat_dog_scores') || '{}');
+  const playableCats = [];
 
-  if (myCats.length < 3) {
-    showCustomAlert("貓咪數量不足", `「小狗抓貓咪」需要至少 3 隻天使貓咪組隊喔！你目前擁有的天使貓咪共有 ${myCats.length} 隻。`, "⚠️");
+  // 1. 陪伴中的主角貓
+  if (gameState.currentCat) {
+    const curBest = Math.max(gameState.currentCat.dogScore || 0, dogScoresMap['current'] || 0, dogScoresMap[gameState.currentCat.name] || 0);
+    playableCats.push({
+      catId: 'current',
+      isLiving: true,
+      name: gameState.currentCat.name,
+      breed: gameState.currentCat.breed?.name || '米克斯貓',
+      dogScore: curBest,
+      color: gameState.currentCat.breed?.color || '#E67E22',
+      stripe: gameState.currentCat.breed?.stripe || '#D35400',
+      img: generateBreedThumbnail(gameState.currentCat.breed?.color || '#E67E22', gameState.currentCat.breed?.stripe || '#D35400')
+    });
+  }
+
+  // 2. 貓星球天使貓
+  (gameState.myStarCats || []).forEach(c => {
+    if (myOwnedIds.includes(c.catId) || myOwnedIds.includes(c.id)) {
+      const catKey = c.catId || c.id || c.name;
+      const starBest = Math.max(c.dogScore || 0, c.dog_score || 0, dogScoresMap[catKey] || 0, dogScoresMap[c.name] || 0);
+      playableCats.push({
+        catId: c.catId || c.id,
+        isLiving: false,
+        name: c.name,
+        breed: c.breed,
+        dogScore: starBest,
+        color: c.color,
+        stripe: c.stripe,
+        img: c.img || generateBreedThumbnail(c.color || '#E67E22', c.stripe || '#D35400')
+      });
+    }
+  });
+
+  if (playableCats.length < 3) {
+    showCustomAlert("貓咪數量不足", `「小狗抓貓咪」需要至少 3 隻貓咪組隊喔！你目前擁有的貓咪共有 ${playableCats.length} 隻。`, "⚠️");
     return;
   }
 
-  window.tempDogCats = myCats;
+  window.tempDogCats = playableCats;
   selectedCatOrder = [];
   renderDogSelectUI();
   document.getElementById('modal-minigame-dog-select')?.classList.remove('hidden');
@@ -103,16 +128,17 @@ function renderDogSelectUI() {
     const isLeader = orderIndex === 0;
     const thumb = c.img || generateBreedThumbnail(c.color || '#E67E22', c.stripe || '#D35400');
     const borderClass = isSelected ? "border-[#9E2A2B] bg-[#FCE8E8]" : "border-[#E5E0D8] bg-white";
-    
+    const livingTag = c.isLiving ? '<span class="text-[9px] bg-emerald-100 text-emerald-800 px-1 py-0.2 rounded font-bold ml-1 border border-emerald-300">陪伴中</span>' : '';
+
     let tagHtml = '<div class="w-4 h-4 rounded-full border border-gray-300"></div>';
-    let statusText = '點擊加入';
+    let statusText = `最佳生存分: ${c.dogScore || 0} 分`;
 
     if (isLeader) {
       tagHtml = '<span class="text-[11px] bg-amber-500 text-white px-2 py-0.5 rounded-full font-bold shadow-sm">👑 隊長 (計分)</span>';
-      statusText = '隊長 · 專屬記錄此貓分數';
+      statusText = '先發隊長 · 本局只記錄此貓成績';
     } else if (isSelected) {
       tagHtml = `<span class="text-[10px] bg-[#9E2A2B] text-white px-1.5 py-0.5 rounded-full font-bold">隊員 #${orderIndex + 1}</span>`;
-      statusText = '已入隊 (同行加成)';
+      statusText = '已入隊 (提供同行倍率加成)';
     }
 
     container.innerHTML += `
@@ -120,7 +146,10 @@ function renderDogSelectUI() {
         <div class="flex items-center gap-3">
           <img src="${thumb}" class="w-10 h-10 rounded-lg border border-[#E5E0D8] p-1 bg-[#FAF8F5]">
           <div class="text-left">
-            <div class="font-bold text-xs text-[#2C2C2C]">${c.name}</div>
+            <div class="font-bold text-xs text-[#2C2C2C] flex items-center">
+              <span>${c.name}</span>
+              ${livingTag}
+            </div>
             <div class="text-[10px] text-[#7F7B75]">${statusText}</div>
           </div>
         </div>
@@ -131,13 +160,12 @@ function renderDogSelectUI() {
 
   const count = selectedCatOrder.length;
   if (count >= 3 && count <= 10) {
-    // 3隻=1.0x, 4隻=1.2x, 5隻=1.4x ... 每增加 1 隻 +0.2x
     const mult = (1.0 + (count - 3) * 0.2).toFixed(1);
     const leaderCat = window.tempDogCats[selectedCatOrder[0]];
     btnStart.disabled = false;
     btnStart.innerText = `出發！開始挑戰 (${count} 隻貓咪)`;
     if (summaryEl) {
-      summaryEl.innerHTML = `隊長：<strong class="text-[#9E2A2B]">${leaderCat.name}</strong>｜已選 <strong>${count}</strong> 隻貓咪（得分加成：<strong class="text-[#9E2A2B]">${mult} 倍</strong>）`;
+      summaryEl.innerHTML = `隊長：<strong class="text-[#9E2A2B]">${leaderCat.name}</strong>｜已選 <strong>${count}</strong> 隻（得分加成：<strong class="text-[#9E2A2B]">${mult} 倍</strong>）`;
     }
   } else {
     btnStart.disabled = true;
@@ -154,6 +182,9 @@ window.startDogGameFromSelect = function() {
   const selectedArr = selectedCatOrder.map(idx => window.tempDogCats[idx]);
   scoreMultiplier = 1.0 + (selectedArr.length - 3) * 0.2;
 
+  // 【新增】明確綁定陣列的第 0 項為真正的隊長
+  activeLeaderCat = selectedArr[0];
+
   selectedArr.forEach(c => {
     const img = new Image();
     img.src = c.img || generateBreedThumbnail(c.color || '#E67E22', c.stripe || '#D35400');
@@ -162,7 +193,7 @@ window.startDogGameFromSelect = function() {
 
   document.getElementById('modal-minigame-dog-play')?.classList.remove('hidden');
   document.getElementById('dog-overlay')?.classList.remove('hidden');
-  document.getElementById('dog-controls-wrapper')?.classList.add('hidden'); // 準備頁面先隱藏搖桿
+  document.getElementById('dog-controls-wrapper')?.classList.add('hidden');
   document.getElementById('dog-multiplier').innerText = scoreMultiplier.toFixed(1);
   
   canvas = document.getElementById('dog-canvas');
@@ -179,12 +210,8 @@ export function closeMinigameDog() {
   document.getElementById('modal-minigame-dog-play')?.classList.add('hidden');
 }
 
-// ==========================================
-// 2. 遊戲主循環
-// ==========================================
 window.startDogGameLoop = function() {
   document.getElementById('dog-overlay')?.classList.add('hidden');
-  // 正式開始遊戲，顯示圓形手把搖桿
   document.getElementById('dog-controls-wrapper')?.classList.remove('hidden');
   
   startTime = Date.now();
@@ -203,7 +230,6 @@ window.startDogGameLoop = function() {
   document.getElementById('dog-score').innerText = 0;
   document.getElementById('dog-time').innerText = 0;
 
-  // 初始第 1 隻狗 (基礎速度 2.2)
   dogs = [{
     x: CANVAS_WIDTH / 2 - 20,
     y: CANVAS_HEIGHT - 80,
@@ -215,7 +241,6 @@ window.startDogGameLoop = function() {
     targetPos: { x: CANVAS_WIDTH / 2, y: 100 }
   }];
 
-  // 貓咪隊列初始化 (隊長在最前方)
   cats = [];
   pathHistory = [];
   for (let i = 0; i < catImages.length; i++) {
@@ -245,15 +270,12 @@ function update() {
   document.getElementById('dog-score').innerText = totalScore;
   document.getElementById('dog-time').innerText = survivalSeconds;
 
-  // 小狗生成：每 10 秒增加 1 隻
   if (survivalSeconds > 0 && survivalSeconds % 10 === 0 && lastDogSpawnSecond !== survivalSeconds) {
     lastDogSpawnSecond = survivalSeconds;
 
     const prevDog = dogs[dogs.length - 1];
     const multiplier = dogs.length === 1 ? 1.2 : 1.3;
     let nextSpeed = prevDog ? Number((prevDog.speed * multiplier).toFixed(2)) : 2.5;
-    
-    // 速度持續增加，但極限速度鎖定於 4.3 (只比貓咪 4.2 快一點點)
     const calculatedSpeed = Math.min(MAX_DOG_SPEED, nextSpeed);
 
     const spawnPoints = [
@@ -268,7 +290,7 @@ function update() {
       x: pt.x,
       y: pt.y,
       speed: calculatedSpeed,
-      freezeUntil: now + 2000, // 新出生的狗原地發呆 2 秒
+      freezeUntil: now + 2000,
       isSmart: true,
       aiState: 'chase',
       stateUntil: now + 2500,
@@ -278,7 +300,6 @@ function update() {
     spawnFloatingBanner("有新的狗狗加入");
   }
 
-  // 道具生成：每 10 秒隨機產生 1 個道具
   if (survivalSeconds > 0 && survivalSeconds % 10 === 0 && lastItemSpawnSecond !== survivalSeconds) {
     lastItemSpawnSecond = survivalSeconds;
     const itemType = Math.floor(Math.random() * 3) + 1;
@@ -289,7 +310,6 @@ function update() {
     });
   }
 
-  // 1. 領頭貓移動 (優先讀取圓形手把搖桿輸入，輔助讀取鍵盤)
   let baseCatSpeed = CAT_BASE_SPEED;
   if (now < buffCatSpeedUntil) baseCatSpeed = 6.5;
 
@@ -327,7 +347,6 @@ function update() {
     if (pathHistory.length > 250) pathHistory.shift();
   }
 
-  // 2. 後方貓咪循跡跟隨
   const spacing = 12;
   for (let i = 1; i < cats.length; i++) {
     const targetIdx = pathHistory.length - (i * spacing);
@@ -337,7 +356,6 @@ function update() {
     }
   }
 
-  // 3. 道具檢測與拾取
   for (let i = activeItems.length - 1; i >= 0; i--) {
     const item = activeItems[i];
     let picked = false;
@@ -353,7 +371,6 @@ function update() {
     }
   }
 
-  // 4. 小狗行為決策 (預測路徑 / 4角落埋伏 / 停頓 0.3 秒)
   const isAllDogsFrozen = now < debuffDogFreezeUntil;
   const anyDogAmbushing = dogs.some(d => d.aiState === 'ambush');
 
@@ -365,21 +382,15 @@ function update() {
 
     if (dog.isSmart && now > dog.stateUntil) {
       const rand = Math.random();
-
-      // 場上有 2 隻狗以上時，機率性指派 1 隻前往 4 個角落埋伏
       if (dogs.length >= 2 && !anyDogAmbushing && rand < 0.3) {
         dog.aiState = 'ambush';
         dog.stateUntil = now + 3500;
         const corner = CORNERS[Math.floor(Math.random() * CORNERS.length)];
         dog.targetPos = { x: corner.x, y: corner.y };
-      }
-      // 停頓 0.3 秒 (300ms) 觀察
-      else if (rand < 0.48) {
+      } else if (rand < 0.48) {
         dog.aiState = 'pause';
         dog.stateUntil = now + 300;
-      }
-      // 預判玩家路徑，先跑過去再追人
-      else if (rand < 0.82) {
+      } else if (rand < 0.82) {
         dog.aiState = 'intercept';
         dog.stateUntil = now + 3000;
         const leadDist = 75;
@@ -389,17 +400,14 @@ function update() {
           x: Math.max(40, Math.min(CANVAS_WIDTH - 60, targetPx)),
           y: Math.max(40, Math.min(CANVAS_HEIGHT - 60, targetPy))
         };
-      }
-      // 一般直接追擊
-      else {
+      } else {
         dog.aiState = 'chase';
         dog.stateUntil = now + 2500;
       }
     }
 
-    // 依狀態執行位移
     if (dog.aiState === 'pause') {
-      // 停下 0.3 秒，不移動
+      // 停下 0.3 秒
     } else if (dog.aiState === 'intercept' || dog.aiState === 'ambush') {
       const angle = Math.atan2((dog.targetPos.y + 20) - (dog.y + 20), (dog.targetPos.x + 20) - (dog.x + 20));
       dog.x += Math.cos(angle) * currentDogSpeed;
@@ -423,7 +431,6 @@ function update() {
       dog.y += Math.sin(angle) * currentDogSpeed;
     }
 
-    // 5. 碰撞檢測
     cats.forEach(c => {
       if (Math.hypot((c.x + 20) - (dog.x + 20), (c.y + 20) - (dog.y + 20)) < 26) {
         gameOver("有貓咪被小狗抓到了！🐶");
@@ -449,14 +456,10 @@ function spawnFloatingBanner(msg) {
   floatingText = { text: msg, until: Date.now() + 2200 };
 }
 
-// ==========================================
-// 3. 畫布渲染 (純粹 Icon 顯示，無外框底圈)
-// ==========================================
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
   const now = Date.now();
 
-  // 底圖雙色草坪格紋
   const tileSize = 70;
   for (let y = 0; y < canvas.height; y += tileSize) {
     for (let x = 0; x < canvas.width; x += tileSize) {
@@ -466,7 +469,6 @@ function draw() {
     }
   }
 
-  // 道具：純粹 Icon
   activeItems.forEach(item => {
     ctx.font = "32px sans-serif";
     ctx.textAlign = 'center';
@@ -475,7 +477,6 @@ function draw() {
     ctx.fillText(icon, item.x, item.y);
   });
 
-  // 貓咪隊伍
   for (let i = cats.length - 1; i >= 0; i--) {
     const cx = cats[i].x;
     const cy = cats[i].y;
@@ -492,7 +493,6 @@ function draw() {
       ctx.drawImage(catImages[i].img, cx - 12, cy - 2, 64, 40);
     }
 
-    // 隊長標記
     if (i === 0) {
       ctx.font = "18px sans-serif";
       ctx.textAlign = 'center';
@@ -500,7 +500,6 @@ function draw() {
     }
   }
 
-  // 小狗：純粹 Icon (40px)
   dogs.forEach(dog => {
     ctx.font = "40px sans-serif";
     ctx.textAlign = 'center';
@@ -508,7 +507,6 @@ function draw() {
     ctx.fillText("🐕", dog.x + 20, dog.y + 20);
   });
 
-  // 橫幅提示
   if (floatingText && now < floatingText.until) {
     ctx.fillStyle = 'rgba(0,0,0,0.82)';
     if (ctx.roundRect) {
@@ -526,22 +524,64 @@ function draw() {
   }
 }
 
-// ==========================================
-// 4. 結束與只登記隊長成績
-// ==========================================
+// 結束並更新隊長分數
 function gameOver(reason) {
   isPlaying = false;
-  // 遊戲結束，隱藏圓形搖桿
   document.getElementById('dog-controls-wrapper')?.classList.add('hidden');
 
-  const leaderCat = catImages[0]?.catData;
+  // 【修改】使用明確綁定的隊長，而不是依賴畫布陣列
+  const leaderCat = activeLeaderCat; 
+  
   if (leaderCat) {
-    if (totalScore > (leaderCat.dogScore || 0)) {
+    const prevBest = leaderCat.dogScore || 0;
+    if (totalScore > prevBest) {
       leaderCat.dogScore = totalScore;
-      if (window.saveMyStarCats) {
-        saveMyStarCats();
+
+      // 1. 持久化寫入獨立快取表 (cat_dog_scores)
+      const dogScoresMap = JSON.parse(localStorage.getItem('cat_dog_scores') || '{}');
+      const catKey = leaderCat.catId || leaderCat.id || leaderCat.name;
+      dogScoresMap[catKey] = totalScore;
+      if (leaderCat.name) dogScoresMap[leaderCat.name] = totalScore;
+      localStorage.setItem('cat_dog_scores', JSON.stringify(dogScoresMap));
+
+      // 2. 若隊長是當前生活中的貓咪
+      if (leaderCat.isLiving || leaderCat.catId === 'current') {
+        if (gameState.currentCat) {
+          gameState.currentCat.dogScore = totalScore;
+        }
+        if (typeof autoSaveCurrentCatProgress === 'function') {
+          autoSaveCurrentCatProgress();
+        } else if (window.autoSaveCurrentCatProgress) {
+          window.autoSaveCurrentCatProgress();
+        }
+      } else {
+        // 3. 若隊長是貓星球天使貓
+        const starCat = (gameState.myStarCats || []).find(sc => 
+          (sc.catId && sc.catId === leaderCat.catId) || 
+          (sc.id && sc.id === leaderCat.catId) || 
+          (sc.name && sc.name === leaderCat.name)
+        );
+        if (starCat) {
+          starCat.dogScore = totalScore;
+        }
+        if (typeof saveMyStarCats === 'function') {
+          saveMyStarCats();
+        }
       }
     }
+  }
+
+  // 即時重新渲染首頁排行榜與回憶錄
+  if (typeof renderHomeRankTab === 'function') {
+    renderHomeRankTab(gameState.currentRankTab || 'dogScore');
+  } else if (window.renderHomeRankTab) {
+    window.renderHomeRankTab(gameState.currentRankTab || 'dogScore');
+  }
+
+  if (typeof renderMyMemories === 'function') {
+    renderMyMemories();
+  } else if (window.renderMyMemories) {
+    window.renderMyMemories();
   }
 
   document.getElementById('dog-overlay')?.classList.remove('hidden');
@@ -549,9 +589,6 @@ function gameOver(reason) {
   document.getElementById('dog-status-desc').innerText = `${reason}\n\n隊長貓咪: ${leaderCat ? leaderCat.name : '未知'}\n存活時間: ${survivalSeconds} 秒 (${catImages.length} 隻同行)\n倍率加成: ${scoreMultiplier.toFixed(1)}x\n最終得分: ${totalScore} 分 (已計入隊長紀錄)！`;
 }
 
-// ==========================================
-// 圓形手把搖桿 (Virtual Joystick) 監聽邏輯
-// ==========================================
 function setupJoystickControls() {
   const base = document.getElementById('dog-joystick-base');
   const knob = document.getElementById('dog-joystick-knob');
@@ -611,7 +648,6 @@ function setupJoystickControls() {
   };
 }
 
-// 鍵盤輔助監聽
 window.addEventListener('keydown', (e) => {
   if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W') keys.up = true;
   if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') keys.down = true;

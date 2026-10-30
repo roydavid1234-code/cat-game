@@ -154,23 +154,97 @@ export function renderHomeRankTab(statKey = 'growth') {
   if (!container) return;
   container.innerHTML = '';
 
+  // 1. 取得玩家名下擁有的所有貓咪 ID
+  const myOwnedIds = JSON.parse(localStorage.getItem('my_owned_cat_ids') || '[]');
+  const dogScoresMap = JSON.parse(localStorage.getItem('cat_dog_scores') || '{}');
+  const crossyScoresMap = JSON.parse(localStorage.getItem('cat_crossy_scores') || '{}');
+
+  // 2. 合併星空貓群
   const allPool = [...(gameState.myStarCats || [])];
 
+  // 3. 抓取當前生活中的主角貓（無論在記憶體中還是在本機存檔中）
+  let livingCat = gameState.currentCat;
+  if (!livingCat) {
+    try {
+      const saved = localStorage.getItem('saved_living_cat');
+      if (saved) livingCat = JSON.parse(saved).cat;
+    } catch (e) {}
+  }
+
+  if (livingCat) {
+    allPool.push({
+      catId: 'current',
+      isLiving: true,
+      name: livingCat.name,
+      breed: livingCat.breed?.name || livingCat.breed || '米克斯貓',
+      owner: livingCat.owner || gameState.playerName || '貓奴',
+      lifespan: `成長中 (${Math.floor((livingCat.ageMonths || 0) / 12)}歲${Math.floor((livingCat.ageMonths || 0) % 12)}個月)`,
+      totalMonths: livingCat.ageMonths || 0,
+      ageMonths: livingCat.ageMonths || 0,
+      cute: livingCat.cute || 0,
+      smarts: livingCat.smarts || 0,
+      agility: livingCat.agility || 0,
+      charm: livingCat.charm || 0,
+      affection: livingCat.affection || 0,
+      crossyScore: livingCat.crossyScore || 0,
+      dogScore: livingCat.dogScore || 0,
+      color: livingCat.breed?.color || livingCat.color || '#E67E22',
+      stripe: livingCat.breed?.stripe || livingCat.stripe || '#D35400',
+      img: livingCat.img || generateBreedThumbnail(livingCat.breed?.color || livingCat.color || '#E67E22', livingCat.breed?.stripe || livingCat.stripe || '#D35400')
+    });
+  }
+
+  // 4. 校正所有貓咪的分數（讀取獨立持久化快取）
+  allPool.forEach(cat => {
+    const key = cat.catId || cat.id || cat.name;
+    const localDog = dogScoresMap[key] || (cat.name ? dogScoresMap[cat.name] : 0) || 0;
+    cat.dogScore = Math.max(Number(cat.dogScore) || 0, Number(cat.dog_score) || 0, localDog);
+
+    const localCrossy = crossyScoresMap[key] || (cat.name ? crossyScoresMap[cat.name] : 0) || 0;
+    cat.crossyScore = Math.max(Number(cat.crossyScore) || 0, Number(cat.crossy_score) || 0, localCrossy);
+  });
+
+  // 5. 排序
   if (statKey === 'growth') {
     allPool.sort((a, b) => getCatGrowthMonths(b) - getCatGrowthMonths(a));
   } else {
-    allPool.sort((a, b) => (b[statKey] || 0) - (a[statKey] || 0));
+    allPool.sort((a, b) => (Number(b[statKey]) || 0) - (Number(a[statKey]) || 0));
   }
 
-  if (allPool.length === 0) {
-    container.innerHTML = `<div class="col-span-full py-8 text-center text-[#7F7B75] text-xs font-serif leading-relaxed">🐾 目前貓星球尚未有回到星空的貓咪守護神 ✨</div>`;
+  // 6. 規則套用：若是「貓咪過街」或「小狗抓貓」，自己的貓咪只顯示 1 隻最高分的代表！
+  let displayPool = allPool;
+  if (statKey === 'crossyScore' || statKey === 'dogScore') {
+    let seenMyCat = false;
+    displayPool = allPool.filter(item => {
+      const isMine = item.catId === 'current' || item.isLiving || myOwnedIds.includes(item.catId) || myOwnedIds.includes(item.id);
+      if (isMine) {
+        if (!seenMyCat) {
+          seenMyCat = true;
+          return true; // 僅保留第 1 隻（即最高分的那一隻）
+        }
+        return false; // 過濾掉後續較低分的自己貓咪
+      }
+      return true; // 其他貓咪正常上榜
+    });
+  }
+
+  if (displayPool.length === 0) {
+    container.innerHTML = `<div class="col-span-full py-8 text-center text-[#7F7B75] text-xs font-serif leading-relaxed">🐾 目前尚未有貓咪紀錄 ✨</div>`;
     return;
   }
 
   const limit = gameState.isRankExpanded ? 10 : 3;
-  allPool.slice(0, limit).forEach((item, idx) => {
-    const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx+1}`;
-    const catThumb = generateBreedThumbnail(item.color || '#E67E22', item.stripe || '#D35400');
+  displayPool.slice(0, limit).forEach((item, idx) => {
+    const medal = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
+    const catThumb = item.img || generateBreedThumbnail(item.color || '#E67E22', item.stripe || '#D35400');
+    
+    const isMine = item.catId === 'current' || item.isLiving || myOwnedIds.includes(item.catId) || myOwnedIds.includes(item.id);
+    const livingBadge = item.isLiving 
+      ? '<span class="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-bold ml-1.5 border border-emerald-300">陪伴中</span>' 
+      : '';
+    const myCatBadge = isMine
+      ? '<span class="text-[9px] bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded font-bold ml-1.5 border border-amber-300 shadow-sm">🌟我的</span>'
+      : '';
 
     let statLabel = '';
     if (statKey === 'growth') statLabel = `⏳成長:${Math.floor(getCatGrowthMonths(item) / 12)}歲${Math.floor(getCatGrowthMonths(item)) % 12}月`;
@@ -179,17 +253,22 @@ export function renderHomeRankTab(statKey = 'growth') {
     else if (statKey === 'affection') statLabel = `❤️親密:${item.affection || 0}`;
     else if (statKey === 'smarts') statLabel = `💡智力:${item.smarts || 0}`;
     else if (statKey === 'agility') statLabel = `⚡靈巧:${item.agility || 0}`;
-    else if (statKey === 'crossyScore') statLabel = `🎮過街:${item.crossyScore || 0}`;
-    else if (statKey === 'dogScore') statLabel = `🐕生存:${item.dogScore || 0}秒`;
+    else if (statKey === 'crossyScore') statLabel = `🎮過街:${item.crossyScore || 0}分`;
+    else if (statKey === 'dogScore') statLabel = `🐕抓貓:${item.dogScore || 0}分`;
 
     container.innerHTML += `
-      <div class="p-3 bg-[#FAF8F5] border border-[#E5E0D8] rounded-2xl flex items-center justify-between gap-2 shadow-sm hover:border-[#9E2A2B] transition">
+      <div class="p-3 bg-[#FAF8F5] border ${item.isLiving ? 'border-emerald-400 bg-emerald-50/30' : 'border-[#E5E0D8]'} rounded-2xl flex items-center justify-between gap-2 shadow-sm hover:border-[#9E2A2B] transition ${isMine ? 'ring-1 ring-amber-400/50' : ''}">
         <div class="flex items-center gap-2.5 overflow-hidden">
           <span class="font-serif font-black text-base w-5 text-center text-[#9E2A2B] flex-shrink-0">${medal}</span>
           <img src="${catThumb}" class="w-10 h-10 rounded-xl bg-white border border-[#E5E0D8] p-1 flex-shrink-0">
           <div class="truncate">
-            <div class="font-bold text-[#2C2C2C] truncate text-xs sm:text-sm">${item.name} <span class="text-[10px] font-normal text-[#7F7B75]">(${item.breed})</span></div>
-            <div class="text-[9px] sm:text-[10px] text-[#7F7B75] mt-0.5 leading-tight">主人：${item.owner}<br>歷程：${item.lifespan}</div>
+            <div class="font-bold text-[#2C2C2C] truncate text-xs sm:text-sm flex items-center">
+              <span>${item.name}</span>
+              <span class="text-[10px] font-normal text-[#7F7B75] ml-1">(${item.breed})</span>
+              ${livingBadge}
+              ${myCatBadge}
+            </div>
+            <div class="text-[9px] sm:text-[10px] text-[#7F7B75] mt-0.5 leading-tight">主人：${item.owner}<br>年齡：${item.lifespan}</div>
           </div>
         </div>
         <div class="bg-white px-2 py-1.5 rounded-lg border border-[#E5E0D8] text-[10px] sm:text-[11px] font-bold text-[#9E2A2B] whitespace-nowrap flex-shrink-0 shadow-sm">
@@ -324,7 +403,7 @@ export function renderMyMemories() {
                 <span>${c.name}</span>
                 <span class="text-[11px] font-normal text-[#7F7B75]">(${c.breed})</span>
               </div>
-              <div class="text-[11px] text-[#9E2A2B] font-bold mt-0.5">成長歷程：${c.lifespan || '未知'}</div>
+              <div class="text-[11px] text-[#9E2A2B] font-bold mt-0.5">成長年齡：${c.lifespan || '未知'}</div>
               <div class="text-[10px] text-[#7F7B75]">守護主人：${c.owner || '貓奴'}</div>
             </div>
           </div>
