@@ -1,111 +1,41 @@
-import { toggleAudio } from './audio.js';
+import './minigame-crossy.js';
+import './minigame-dog.js';
+import { loadStarCatsFromCloud, loadBirthedHistoryFromCloud } from './cloud-db.js';
 import { 
   renderTopBreedsBars, 
-  renderAllBreedsModal, 
-  openBreedModal, 
-  closeBreedModal, 
-  switchHomeRankTab, 
-  toggleRankExpand, 
-  switchPlanetFilter, 
+  renderHomeRankTab, 
   renderCatPlanetSection, 
-  gotoPlanetPage, 
-  showNostalgicQuote, 
-  openMyMemoryModal, 
-  closeMyMemoryModal, 
-  showCustomAlert, 
-  closeCustomAlert, 
-  openNameModal, 
-  closeNameModal, 
-  randomizeCatName, 
-  confirmBirthWithName, 
-  setInteractionMode, 
-  feedDirectFood, 
-  refillWater, 
-  visitDoctor, 
-  togglePlayPause, 
-  setTimeSpeed, 
-  stepAgeTime, 
-  resolveEventChoice, 
-  openShopModal, 
-  closeShopModal, 
-  buySnackItem, 
-  buyShopItem, 
-  submitCatFarewellAndFinish,
-  saveCurrentCatProgress,
-  continueSavedCat,
-  updateContinueButtonState
+  updateContinueButtonState,
+  autoSaveCurrentCatProgress 
 } from './ui-handler.js';
 import { initParadiseGarden } from './canvas-render.js';
-import { gameState } from './game-state.js';
-import { fetchGlobalStarCats, fetchGlobalBirthHistory } from './cloud-db.js';
 
-// 掛載至全域 window 供 HTML inline onclick 呼叫
-Object.assign(window, {
-  toggleAudio,
-  renderTopBreedsBars,
-  openBreedModal,
-  closeBreedModal,
-  switchHomeRankTab,
-  toggleRankExpand,
-  switchPlanetFilter,
-  renderCatPlanetSection,
-  gotoPlanetPage,
-  showNostalgicQuote,
-  openMyMemoryModal,
-  closeMyMemoryModal,
-  showCustomAlert,
-  closeCustomAlert,
-  openNameModal,
-  closeNameModal,
-  randomizeCatName,
-  confirmBirthWithName,
-  setInteractionMode,
-  feedDirectFood,
-  refillWater,
-  visitDoctor,
-  togglePlayPause,
-  setTimeSpeed,
-  stepAgeTime,
-  resolveEventChoice,
-  openShopModal,
-  closeShopModal,
-  buySnackItem,
-  buyShopItem,
-  submitCatFarewellAndFinish,
-  saveCurrentCatProgress,
-  continueSavedCat
+document.addEventListener('DOMContentLoaded', async () => {
+  // 1. 載入雲端資料
+  await loadStarCatsFromCloud();
+  await loadBirthedHistoryFromCloud();
+
+  // 2. 初始化首頁介面與排行榜
+  renderTopBreedsBars();
+  renderHomeRankTab('growth');
+  renderCatPlanetSection();
+  updateContinueButtonState();
+
+  // 3. 初始化背景天堂島動畫
+  const paradiseCanvas = document.getElementById('paradise-canvas');
+  if (paradiseCanvas) {
+    initParadiseGarden();
+  }
 });
 
-// 初始化應用程式（先拉取雲端數據，再進行畫面渲染）
-async function initApp() {
-  try {
-    // 1. 同步雲端資料庫中所有玩家送上星空的貓咪與誕生紀錄
-    const [globalCats, globalBirths] = await Promise.all([
-      fetchGlobalStarCats(),
-      fetchGlobalBirthHistory()
-    ]);
+// 離開分頁或重新整理時自動存檔
+window.addEventListener('beforeunload', () => {
+  autoSaveCurrentCatProgress();
+});
 
-    if (globalCats && globalCats.length > 0) {
-      gameState.myStarCats = globalCats;
-    }
-    if (globalBirths && globalBirths.length > 0) {
-      gameState.birthedCatsHistory = globalBirths;
-    }
-  } catch (err) {
-    console.error("雲端載入失敗，降級使用本地存檔：", err);
+// 切換至背景時自動存檔
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'hidden') {
+    autoSaveCurrentCatProgress();
   }
-
-  // 2. 執行初次渲染
-  renderTopBreedsBars();
-  renderAllBreedsModal();
-  switchHomeRankTab(gameState.currentRankTab);
-  renderCatPlanetSection();
-  initParadiseGarden();
-  updateContinueButtonState();
-}
-
-if (document.readyState === 'loading') {
-  window.addEventListener('DOMContentLoaded', initApp);
-} else {
-  initApp();
-}
+});

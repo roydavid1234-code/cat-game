@@ -1,69 +1,68 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getDatabase, ref, push, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+import { gameState, saveMyStarCats, saveBirthedHistory } from './game-state.js';
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, get, push } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
+// Firebase 配置 (對準您原本的 Realtime Database)
 const firebaseConfig = {
-  apiKey: "AIzaSyDWOtcco52iK9in2Iis1IrR_QRDb6fgPKc",
-  authDomain: "cat-planet-89c9e.firebaseapp.com",
   projectId: "cat-planet-89c9e",
-  storageBucket: "cat-planet-89c9e.firebasestorage.app",
-  messagingSenderId: "449678472915",
-  appId: "1:449678472915:web:78cad08b95dbfef4f90626",
-  measurementId: "G-H50XJPDZG6",
   databaseURL: "https://cat-planet-89c9e-default-rtdb.firebaseio.com"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
-// 1. 上傳已故貓咪到全域貓星球
-export async function uploadStarCatToCloud(catData) {
+// 1. 上傳星空貓咪資料
+export async function uploadStarCatToCloud(record) {
   try {
-    const starCatsRef = ref(db, 'star_cats');
-    const newRef = await push(starCatsRef, catData);
-    return newRef.key;
-  } catch (err) {
-    console.error("雲端上傳失敗：", err);
-    return null;
+    await push(ref(db, "star_cats"), record);
+    console.log("☁️ 星空貓咪上傳雲端成功！");
+  } catch (e) {
+    console.warn("☁️ 雲端上傳失敗，已存至本地：", e);
   }
 }
 
-// 2. 從全域貓星球拉取所有玩家的貓咪
-export async function fetchGlobalStarCats() {
+// 2. 上傳誕生紀錄
+export async function uploadBirthToCloud(record) {
   try {
-    const starCatsRef = ref(db, 'star_cats');
-    const snapshot = await get(starCatsRef);
+    await push(ref(db, "birthed_history"), record);
+    console.log("☁️ 誕生紀錄上傳雲端成功！");
+  } catch (e) {
+    console.warn("☁️ 雲端誕生紀錄上傳失敗：", e);
+  }
+}
+
+// 3. 載入星空貓咪
+export async function loadStarCatsFromCloud() {
+  try {
+    const snapshot = await get(ref(db, "star_cats"));
     if (snapshot.exists()) {
       const data = snapshot.val();
-      return Object.keys(data).map(key => ({
-        id: key,
-        ...data[key]
-      })).reverse();
+      const cloudCats = Object.values(data);
+      gameState.myStarCats = cloudCats;
+      saveMyStarCats();
+      console.log(`☁️ 已成功載入 ${cloudCats.length} 隻星空貓咪資料`);
+    } else {
+      console.log("☁️ 目前雲端尚無星空貓咪資料");
     }
-    return [];
-  } catch (err) {
-    console.error("拉取全域貓咪失敗：", err);
-    return [];
+  } catch (e) {
+    console.warn("☁️ 讀取雲端星空貓咪失敗：", e);
   }
 }
 
-// 3. 上傳誕生紀錄
-export async function uploadBirthToCloud(birthData) {
+// 4. 載入誕生歷史紀錄
+export async function loadBirthedHistoryFromCloud() {
   try {
-    const birthRef = ref(db, 'birthed_history');
-    await push(birthRef, birthData);
-  } catch (err) {}
-}
-
-// 4. 拉取全域誕生紀錄
-export async function fetchGlobalBirthHistory() {
-  try {
-    const birthRef = ref(db, 'birthed_history');
-    const snapshot = await get(birthRef);
+    const snapshot = await get(ref(db, "birthed_history"));
     if (snapshot.exists()) {
-      return Object.values(snapshot.val());
+      const data = snapshot.val();
+      const cloudHistory = Object.values(data);
+      gameState.birthedCatsHistory = cloudHistory;
+      saveBirthedHistory();
+      console.log(`☁️ 已成功載入 ${cloudHistory.length} 筆誕生紀錄`);
+    } else {
+      console.log("☁️ 目前雲端尚無誕生紀錄");
     }
-    return [];
-  } catch (err) {
-    return [];
+  } catch (e) {
+    console.warn("☁️ 讀取雲端誕生紀錄失敗：", e);
   }
 }
