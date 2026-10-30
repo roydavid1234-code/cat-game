@@ -53,6 +53,11 @@ function generateStatsByRarity(tier) {
 // 確保進行中的主角貓隨時常駐於記憶體中
 // ==========================================
 export function ensureCurrentCatLoaded() {
+  // 預載記錄的主人名字
+  if (!gameState.playerName) {
+    gameState.playerName = localStorage.getItem('last_owner_name') || '';
+  }
+
   if (!gameState.currentCat) {
     const raw = localStorage.getItem('saved_living_cat');
     if (raw) {
@@ -458,21 +463,40 @@ export function closeCustomAlert() { document.getElementById('cat-custom-alert-m
 export function openNameModal() {
   const catInput = document.getElementById('cat-name-input');
   const ownerInput = document.getElementById('owner-name-input');
+  
+  // 貓咪名字清空，等待新起名
   if (catInput) catInput.value = '';
-  if (ownerInput) ownerInput.value = '';
+  
+  // 自動帶入上次記錄的主人名字（若沒有則留空），玩家仍可自由修改
+  if (ownerInput) {
+    const rememberedOwner = localStorage.getItem('last_owner_name') || gameState.playerName || '';
+    ownerInput.value = rememberedOwner;
+  }
+  
   document.getElementById('modal-naming')?.classList.remove('hidden');
 }
+
 export function closeNameModal() { document.getElementById('modal-naming')?.classList.add('hidden'); }
 export function randomizeCatName() {
   const n = RANDOM_NAMES[Math.floor(Math.random() * RANDOM_NAMES.length)];
   const input = document.getElementById('cat-name-input');
   if (input) input.value = n;
 }
+
 export function confirmBirthWithName() {
   const catName = document.getElementById('cat-name-input')?.value.trim();
   const ownerName = document.getElementById('owner-name-input')?.value.trim();
-  if (!catName || !ownerName) { showCustomAlert("資料未完整", "主人與貓咪名字皆為必填！🐾", "⚠️"); return; }
+  if (!catName || !ownerName) { 
+    showCustomAlert("資料未完整", "主人與貓咪名字皆為必填！🐾", "⚠️"); 
+    return; 
+  }
+  
+  // 更新記憶體狀態
   gameState.playerName = ownerName;
+  
+  // 永久保存到本機儲存空間，版本更新或誕生下一隻貓時自動帶入
+  localStorage.setItem('last_owner_name', ownerName);
+  
   closeNameModal();
   initCatLife(catName);
 }
